@@ -1,0 +1,16 @@
+.\objects\lv_hal_tick.o: LVGL\src\hal\lv_hal_tick.c
+.\objects\lv_hal_tick.o: LVGL\src\hal\lv_hal_tick.h
+.\objects\lv_hal_tick.o: LVGL\src\hal\../lv_conf_internal.h
+.\objects\lv_hal_tick.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdint.h
+.\objects\lv_hal_tick.o: LVGL\src\hal\../lv_conf_kconfig.h
+.\objects\lv_hal_tick.o: .\LVGL\lv_conf.h
+.\objects\lv_hal_tick.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdbool.h
+.\objects\lv_hal_tick.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stddef.h
+.\objects\lv_hal_tick.o: .\FreeRTOS\src\FreeRTOS.h
+.\objects\lv_hal_tick.o: .\User\FreeRTOSConfig.h
+.\objects\lv_hal_tick.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdio.h
+.\objects\lv_hal_tick.o: .\FreeRTOS\src\projdefs.h
+.\objects\lv_hal_tick.o: .\FreeRTOS\src\portable.h
+.\objects\lv_hal_tick.o: .\FreeRTOS\src\deprecated_definitions.h
+.\objects\lv_hal_tick.o: .\FreeRTOS\portable\portmacro.h
+.\objects\lv_hal_tick.o: .\FreeRTOS\src\mpu_wrappers.h
