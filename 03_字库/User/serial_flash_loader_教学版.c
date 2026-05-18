@@ -1,670 +1,650 @@
 /**
  * ============================================================================
- * serial_flash_loader_教学版.c —— "串口收存" 完整教学程序（纯文档，不编译）
+ * serial_flash_loader_教学版.c —— W25Q64 烧录全流程深度教学
  * ============================================================================
  *
- * 【本文件的作用】
- *   这是一个独立的"教学参考程序"，不修改你工程中的任何现有文件。
- *   你学习完里面的逻辑后，自己动手把关键代码整合到 W25Q64.c 和 main.c 中。
+ * 🎯 本文件的目标：
+ *   让你从 0 开始，彻底理解「STM32 通过串口把大文件写入 W25Q64」的每一步。
+ *   看完之后你可以关掉这个文件，自己从空白 main.c 开始写一套出来。
  *
- *   ⚠️ 本文件不能编译，也**不需要**编译！它是纯文档，仅供阅读学习。
- *      C 语言编译器会跳过 #if 0 ... #endif 之间的所有内容。
+ * 📖 阅读顺序：
+ *   第一部分 → 硬件基础（先理解 W25Q64 是什么、怎么工作）
+ *   第二部分 → 仓库模型（分区规划、目录区、数据区）
+ *   第三部分 → 核心算法①：空间计算（找到下一个空闲位置）
+ *   第四部分 → 核心算法②：货物分装（把数据拆成页写入）
+ *   第五部分 → 流式写入框架（Start → Feed → End 三步走）
+ *   第六部分 → 串口接收状态机（中断 + 缓冲区 + 超时排空）
+ *   第七部分 → main.c 全链路（从启动到烧录完成）
+ *   第八部分 → CRC 校验（如何验证数据完整性）
+ *   第九部分 → 你自己动手的顺序（学习路线）
  *
- * 【整体思路 —— "快递签收"类比】
+ * ════════════════════════════════════════════════════════════════════════════
+ *  第一部分：W25Q64 硬件基础 —— 先认识"纸"是什么样的
+ * ════════════════════════════════════════════════════════════════════════════
  *
- *   你已有的 W25Q64 文件系统像一个"大仓库"，有登记本（目录区）和货架（数据区）。
- *   问题：仓库只接受"一次性整批入库"（W25Q64_FileWrite 需要完整数据在 RAM）。
- *   但字库文件 200KB+，STM32 的 RAM 只有几十 KB，装不下整个字库。
+ *   Q: W25Q64 是什么？
+ *   A: 一颗 8MB（64Mbit）的 SPI 接口 NOR Flash 存储芯片。
+ *      类似于电脑的 SSD，但容量小很多，适合放字库、图片等"只读数据"。
  *
- *   解决方案：给仓库开一扇"小门"（流式写入接口），让快递员（串口）把货物
- *   一包一包（256字节/页）递进来，每次递一包就码放一包到货架上。
+ *   Q: 它的存储结构是怎样的？
+ *   A: 就像一本书，有层级结构：
  *
- *   ┌─────────────────────────────────────────────────────────────┐
- *   │  PC (fireTools)                STM32                        │
- *   │  ┌──────────┐                 ┌─────────────────────────┐   │
- *   │  │ .bin文件  │──串口 TX──→    │ 串口 RXNE 中断          │   │
- *   │  │ 212KB    │   一包256B     │  ↓                      │   │
- *   │  └──────────┘                 │ 收到256B→W25Q64写一页  │   │
- *   │                               │ 收到256B→W25Q64写一页  │   │
- *   │                               │ ...重复直到全部写完     │   │
- *   │                               └─────────────────────────┘   │
- *   └─────────────────────────────────────────────────────────────┘
+ *     ┌─────────────────────────────────────────────────────┐
+ *     │            W25Q64 = 8MB = 8,388,608 字节             │
+ *     │  ┌──────────────────────────────────────────────┐   │
+ *     │  │  块(Block) = 64KB，共 128 个块               │   │
+ *     │  │  ┌────────────────────────────────────────┐  │   │
+ *     │  │  │  扇区(Sector) = 4KB = 4096 字节，      │  │   │
+ *     │  │  │  每块 16 个扇区，共 2048 个扇区        │  │   │
+ *     │  │  │  ┌──────────────────────────────┐      │  │   │
+ *     │  │  │  │  页(Page) = 256 字节，        │      │  │   │
+ *     │  │  │  │  每扇区 16 页，共 32768 页    │      │  │   │
+ *     │  │  │  └──────────────────────────────┘      │  │   │
+ *     │  │  └────────────────────────────────────────┘  │   │
+ *     │  └──────────────────────────────────────────────┘   │
+ *     └─────────────────────────────────────────────────────┘
  *
- * 【你需要学的内容】
- *   1. USART 接收中断（RXNE 中断）—— 怎么"接住"串口发来的每个字节
- *   2. 缓冲区（Buffer）——           怎么暂存收到的一包数据
- *   3. 流式写入接口（Stream）——     怎么把分片数据写入 W25Q64
- *   4. 状态机（State Machine）——    怎么管理"接收中→写入中→完成"的过程
+ *   ⚠️ 三条铁律（背下来！）：
  *
- * 【使用方式】
- *   Step 1: 阅读本文件的每一段注释，理解逻辑
- *   Step 2: 在纸上画出"数据流向图"（PC→串口→缓冲→W25Q64）
- *   Step 3: 自己照着写一遍（不要复制粘贴）
- *   Step 4: 把你的代码整合到工程中调试
+ *   铁律① 写前必须先擦除
+ *     Flash 只能把 1 → 0，不能把 0 → 1。想让某一位变回 1，必须擦除整个扇区。
+ *     擦除后扇区内所有字节都是 0xFF。
  *
- * 【fireTools 怎么用】
- *   1. 打开 fireTools → 选择"串口调试助手"
- *   2. 选对 COM 口，波特率 115200，数据位 8，停止位 1，无校验
- *   3. 勾选"十六进制发送"（重要！否则会按文本发送，数据损坏）
- *   4. 点击"文件"→ 加载你的 .bin 字库文件
- *   5. 点击"发送"
+ *   铁律② 擦除最小单位是扇区（4KB）
+ *     你不能只擦 1 个字节，也不能只擦 1 页。最小擦除单位是 4KB 扇区。
+ *     如果想修改 1 个字节，必须先读出整个扇区 → 在 RAM 里改 → 擦除 → 写回去。
  *
- * 【文件大小速查表】
- *   GB2312 一级汉字 3755 个
- *     16x16 点阵：3755 × 32 = 120,160 字节 ≈ 117 KB
- *     24x24 点阵：3755 × 72 = 270,360 字节 ≈ 264 KB
- *   GB2312 全部汉字 6763 个
- *     16x16 点阵：6763 × 32 = 216,416 字节 ≈ 211 KB
- *     24x24 点阵：6763 × 72 = 486,936 字节 ≈ 476 KB
+ *   铁律③ 写入最大单位是页（256 字节）
+ *     Page Program 命令一次最多写 256 字节，而且不能跨页。
+ *     如果在同一页内写到第 257 个字节，会绕回页开头覆盖，而不是去下一页！
  *
- * 【操作步骤】
- *   1. 把本文件中标注的代码整合到你的工程文件里
- *   2. 在 PC 端用 LvglFontTool 生成 .bin 字库
- *   3. 编译下载程序到 STM32
- *   4. 打开串口助手，看到 STM32 输出 "[Loader] 已准备就绪..."
- *   5. 打开 fireTools → 选择 COM 口 → 115200 / 8N1 → 勾选"十六进制发送"
- *   6. 加载 .bin 文件 → 点"发送"
- *   7. 观察 STM32 输出的进度日志
- *   8. 完成后输出 "[Loader] 文件写入成功！"
- *   9. 断电重启 → W25Q64_FileSysInit → W25Q64_FileRead 验证数据
- * ============================================================================
- */
-
-#if 0  /* ══════════════ 编译开关：以下全部不编译，纯教学文档 ══════════════ */
-/*  ↑ 这行 #if 0 让编译器跳过整个文件，所以没有任何编译错误。
- *    你只看不编译，学会了再自己敲到工程里。                          */
-
-
-/*===========================================================================
- * ╔════════════════════════════════════════════════════════════════╗
- * ║  第一部分：需要加到 Driver/W25Q64.h 的函数声明                ║
- * ╚════════════════════════════════════════════════════════════════╝
+ *   这几条铁律决定了所有上层算法。
  *
- * 在你的 Driver/W25Q64.h 文件末尾（#endif 之前）加入以下声明：
+ * ════════════════════════════════════════════════════════════════════════════
+ *  第二部分：仓库模型 —— 如何在 Flash 里"存放多件货物"
+ * ════════════════════════════════════════════════════════════════════════════
  *
- *   // ---------- 流式写入接口 ----------
- *   int32_t  W25Q64_StreamStart(uint16_t id, uint32_t size);
- *   int32_t  W25Q64_StreamFeed(const uint8_t *data, uint16_t len);
- *   int32_t  W25Q64_StreamEnd(void);
- *   uint16_t W25Q64_CRC16_FromFlash(uint32_t addr, uint32_t size);
- *   uint16_t W25Q64_CRC16_Update(uint16_t crc, const uint8_t *data, uint32_t len);
- * ===========================================================================*/
-
-
-/*===========================================================================
- * ╔════════════════════════════════════════════════════════════════╗
- * ║  第二部分：要加到 Drier/W25Q64.c 的 5 个 static 全局变量     ║
- * ╚════════════════════════════════════════════════════════════════╝
+ *   Q: 为什么需要一个"文件系统"？
+ *   A: W25Q64 只是一个裸的存储芯片，不像 SD 卡有 FAT 文件系统。
+ *      如果你直接往 0x000000 地址写数据，写完之后你怎么知道：
+ *        - 这片数据叫什么？
+ *        - 它从哪开始、到哪结束？
+ *        - 里面有没有坏掉？
+ *      所以需要自己设计一个小型文件系统。
  *
- * 在 Drier/W25Q64.c 文件顶部，找到其他 static 变量的位置
- * （比如 g_DirCache 和 g_DirDirty 那附近），加上这 5 个：
- * ===========================================================================*/
-
-static uint32_t g_FlashAddr        = 0;           // 当前写入的 Flash 起始地址
-static uint32_t g_FileID           = 0;           // 正在写入的文件编号
-static uint32_t g_FileSize         = 0;           // 文件总大小（字节）
-static uint32_t g_BytesWritten     = 0;           // 已写入的字节数
-static uint32_t g_LastErasedSector = 0xFFFFFFFF;  // 上一次擦除的扇区号
-
-
-/*===========================================================================
- * ╔════════════════════════════════════════════════════════════════╗
- * ║  第三部分：要加到 Drier/W25Q64.c 的 3+2 个函数               ║
- * ╚════════════════════════════════════════════════════════════════╝
+ *   类比：仓库 + 登记本
  *
- * 把下面 5 个函数加到 Drier/W25Q64.c 中。
- * 建议放在 W25Q64_FileWrite 函数的后面。
+ *     ┌─────────────┬────────────────────────────────────────────────┐
+ *     │  登记本      │              仓库货架区                        │
+ *     │  (目录区)    │             (数据区)                           │
+ *     │             │                                                │
+ *     │ 条号│大小│位置│   ┌────────────────────────────────────┐      │
+ *     │ ───┼───┼─── │   │  字库.bin  (2.4MB)                  │      │
+ *     │  0 │2.4M│0x40│   │  ┌──────────────────────────┐     │      │
+ *     │  1 │1.2M│... │   │  │  图片.bin  (1.2MB)      │     │      │
+ *     │ ...│... │... │   │  │  ┌─────────────────┐    │     │      │
+ *     └─────────────┘   │  │  │ 空位  (5.4MB)    │    │     │      │
+ *     0x000000  0x004000│  │  └─────────────────┘    │     │      │
+ *                       │  └──────────────────────────┘     │      │
+ *                       │  ...一直延伸到 0x800000 (8MB)     │      │
+ *                       └────────────────────────────────────┘      │
  *
- * 【重要前提】
- *   这些函数会引用同一个 .c 文件里已有的 static 变量和函数：
- *     g_DirCache[], g_DirDirty, g_NextFreeAddr ——  你已有的 static 变量
- *     W25Q64_FindEntryByID()                     ——  你已有的 static 函数
- *     W25Q64_CalcNextFreeAddr()                  ——  你已有的 static 函数
- *     W25Q64_FindFreeEntry()                     ——  你已有的 static 函数
- *     W25Q64_DirFlush()                          ——  你已有的 static 函数
- *     W25Q64_SectorErase(), W25Q64_PageWrite(),
- *     W25Q64_Read()                              ——  你已有的底层函数
- *     W25Q64_PAGE_SIZE, W25Q64_SECTOR_SIZE       ——  你已有的宏
- *     W25Q64_DATA_START_ADDR, W25Q64_DATA_TOTAL_SIZE
+ *   登记本（目录区）格式：每条记录 16 字节
  *
- *   只要放在同一个 .c 文件内，就能直接使用它们。
- * ===========================================================================*/
-
-
-/* --------------------------------------------------------------------------
- * 函数 1/5: W25Q64_StreamStart —— 打开"小门"，准备接收分片数据
+ *     ┌──────┬──────┬──────────┬──────────┬──────┐
+ *     │ used │  id  │ size     │ start_addr│ crc16│
+ *     │ 1字节│2字节 │ 4 字节   │ 4 字节    │2字节 │
+ *     ├──────┼──────┼──────────┼──────────┼──────┤
+ *     │ 0x5A │ 0xA5 │          │          │      │
+ *     │=有效 │=已删除│          │          │      │
+ *     └──────┴──────┴──────────┴──────────┴──────┘
  *
- * 【教学 —— 这个函数干了什么？】 (★ 空间计算 ★)
+ *   查重逻辑：
+ *     写入 id=0 的字库前，先扫描"登记本"看看 id=0 是否已被登记过。
+ *     如果找到了，不修改数据区（旧数据还在），只把那行的 used 改成 0xA5（删除标记），
+ *     新数据写到仓库的空位。这样旧数据实际上还是占着空间的。
  *
- *   1. 检查 id 是否已存在，若存在标记删除旧条目
- *   2. 用"空间计算"算法（W25Q64_CalcNextFreeAddr），
- *      遍历所有已用目录项，找到 end_addr 最大的那个 + 1
- *      → 这个位置就是新数据该放的起始地址
- *   3. 检查剩余空间是否够
- *   4. 把起始地址、文件编号、文件大小等信息记下来，供 StreamFeed 使用
+ *   这就是"标记删除"策略——只改一个字节的标志位，不做物理删除。
  *
- *   【通俗解释 —— "空间计算"】
- *     仓库里已经放了几个箱子（文件），新箱子该放哪里？
- *     答：扫描所有箱子，找到最右边那个箱子的边界，
- *         紧挨着它放新箱子。
- *     这就是"追加写入"策略。
+ * ════════════════════════════════════════════════════════════════════════════
+ *  第三部分：核心算法① —— 空间计算（找到下一个空闲位置）
+ * ════════════════════════════════════════════════════════════════════════════
  *
- * 【调用时机】
- *   main.c 收到 PC 发来的"开始写入"指令后调用。
+ *   函数：W25Q64_CalcNextFreeAddr()
+ *   作用：遍历目录区所有有效条目，找出"被占用的最大地址"，那个地址之后就是空闲区。
  *
- * @param  id    文件编号（比如 0=16点阵字库, 1=24点阵字库, 2=天气图标）
- * @param  size  文件总大小（字节数，PC 端需要先告诉 STM32 文件多大）
- * @return 0=成功, -1=空间不足, -3=参数无效
- */
-int32_t W25Q64_StreamStart(uint16_t id, uint32_t size)
-{
-    int16_t entry_idx;
-
-    if (size == 0) return -3;
-
-    /* ① 如果 id 已存在，标记删除旧条目（不回收空间，新数据往后追加） */
-    entry_idx = W25Q64_FindEntryByID(id);
-    if (entry_idx >= 0) {
-        g_DirCache[entry_idx].used = 0xA5;  /* 标记"已删除" */
-        g_DirDirty = 1;
-    }
-
-    /* ② ★ 空间计算：找到新数据该放的起始地址 */
-    g_FlashAddr = W25Q64_CalcNextFreeAddr();
-
-    /* ③ 容量检查 */
-    if (g_FlashAddr + size > W25Q64_DATA_START_ADDR + W25Q64_DATA_TOTAL_SIZE) {
-        printf("[Stream] 空间不足！需要 %lu 字节\n", (unsigned long)size);
-        return -1;
-    }
-
-    /* ④ 记录文件信息，供 StreamFeed 使用 */
-    g_FileID           = id;
-    g_FileSize         = size;
-    g_BytesWritten     = 0;
-    g_LastErasedSector = 0xFFFFFFFF;  /* 标记"还没擦过任何扇区" */
-
-    printf("[Stream] 开始接收文件 id=%u, 大小=%lu 字节, 起始地址=0x%06X\n",
-           id, (unsigned long)size, (unsigned int)g_FlashAddr);
-    printf("[Stream] 准备接收数据...\n");
-
-    return 0;
-}
-
-
-/* --------------------------------------------------------------------------
- * 函数 2/5: W25Q64_StreamFeed —— 喂一"片"数据到 Flash (★ 最核心！)
+ *   算法逻辑（通俗版）：
  *
- * 【教学 —— 这是整个算法的核心！】
+ *     假设登记本记录如下：
+ *       id=0, size=2.4MB, start_addr=0x001000  → 末尾 = 0x001000 + 2.4MB = 0x266000
+ *       id=1, size=1.2MB, start_addr=0x266000  → 末尾 = 0x266000 + 1.2MB = 0x3A8000
  *
- *   每次调用写入一小片数据（最多 256 字节 = 一页），
- *   复用了 W25Q64_WriteVariableData 里的跨页写入逻辑，
- *   但把一次性写入改成了分次调用。
+ *     遍历所有条目，取 max(末尾地址)，得到 0x3A8000。
+ *     下一个空闲地址 = 0x3A8000（对齐到扇区边界，因为擦除必须从扇区头开始）。
  *
- *   【通俗解释 —— "货物分装"】
+ *   伪代码：
  *
- *     Flash 的页（256 字节）就是最小货架格。货物（数据）可能跨格。
- *     这个函数做的是：把货物拆成正好能放进格子里的小份。
+ *     uint32_t W25Q64_CalcNextFreeAddr(void)
+ *     {
+ *         uint32_t next = W25Q64_DATA_START_ADDR;  // 从数据区开头开始
  *
- *     例：当前写入到第 100 字节处（页还剩 156 字节空间），
- *         你要写入 256 字节 → 先写 156 字节填满此页 →
- *         地址跳到下一页 → 再写剩下的 100 字节。
+ *         for (i = 0; i < 128; i++) {
+ *             if (g_DirCache[i].used == 0x5A) {    // 找到了一个有效条目
+ *                 uint32_t end = g_DirCache[i].start_addr + g_DirCache[i].size;
+ *                 if (end > next)
+ *                     next = end;                   // 推移到更后面
+ *             }
+ *         }
  *
- *   【工作原理 —— 三步】
+ *         // 对齐到扇区边界（4KB 的倍数）
+ *         if (next % 4096 != 0)
+ *             next = (next / 4096 + 1) * 4096;
  *
- *    第一步：溢出检查
- *       已写字节数 + 本次要写的长度 ≤ 文件总大小？
+ *         return next;
+ *     }
  *
- *    第二步：跨页处理 while 循环
- *       while (还有数据没写完) {
- *           a. 计算当前页还剩多少空间
- *              公式：256 - (cur_addr % 256)
- *              例：cur_addr = 0x000050 → 80 → 剩余 = 176 字节
+ *   为什么要对齐到扇区？
+ *     → 新数据写入前要擦除扇区，如果不从扇区开头对齐，第一页可能已经被人占用了。
  *
- *           b. 本次写入量 = min(剩余页空间, 还没写入的数据量)
+ * ════════════════════════════════════════════════════════════════════════════
+ *  第四部分：核心算法② —— 货物分装（把不定量数据拆成页写入）
+ * ════════════════════════════════════════════════════════════════════════════
  *
- *           c. 扇区擦除检查
- *              如果进了新扇区（跨过 4KB 边界），先擦除
- *              （同一扇区内连续写多页，只擦一次）
+ *   函数：W25Q64_WriteVariableData()
+ *   作用：把任意长度的数据写入 Flash，内部自动处理跨页拆分和扇区擦除。
  *
- *           d. 调用 W25Q64_PageWrite 写入这一"小片"
+ *   这叫做"货物分装"——就像搬家公司：
+ *     你有一整车家具（arbitrary bytes），
+ *     但电梯一次只能进 256 件（一页 = 256 字节），
+ *     每层楼是一个扇区（4KB），进入新楼层前要先"打扫"（擦除）。
  *
- *           e. 地址、偏移向前推进
+ *   算法流程（核心中的核心）：
+ *
+ *     输入：data[0..size-1] 要写入的数据，start_addr 写入的起始地址
+ *
+ *     remain = size;          // 还剩多少没搬
+ *     cur_addr = start_addr;  // 当前搬到哪个位置
+ *     last_erased = -1;       // 上一次擦除的扇区编号
+ *
+ *     while (remain > 0) {
+ *
+ *         // === 步骤①：空间计算 ===
+ *         // 当前页还剩多少空位？
+ *         remain_in_page = 256 - (cur_addr % 256);
+ *
+ *         // 举例：cur_addr = 0x001100
+ *         //       0x001100 % 256 = 0（正好是页开头），剩余空间 = 256
+ *         //       0x001180 % 256 = 128（页中间），    剩余空间 = 256 - 128 = 128
+ *
+ *         // === 步骤②：确定本次写入量 ===
+ *         // 本次最多写 remain_in_page，且不超过剩余总量 remain
+ *         chunk = min(remain_in_page, remain);
+ *
+ *         // === 步骤③：扇区擦除 ===
+ *         // 判断是否进入了新扇区
+ *         cur_sector = cur_addr / 4096;
+ *         if (cur_sector != last_erased) {
+ *             EraseSector(cur_addr);    // 擦除这个 4KB 扇区（所有字节变 0xFF）
+ *             last_erased = cur_sector;  // 记住，避免重复擦除
+ *         }
+ *
+ *         // === 步骤④：页写入 ===
+ *         PageWrite(cur_addr, data + offset, chunk);  // 写入 chunk 个字节
+ *
+ *         // === 步骤⑤：推进 ===
+ *         cur_addr += chunk;
+ *         offset   += chunk;
+ *         remain   -= chunk;
+ *     }
+ *
+ *   图解：假设从 0x001100 开始写 500 字节
+ *
+ *     0x001100├──────────────┐ ← 扇区 X 已擦除
+ *             │  第1页: 256B │  chunk=256, remain_in_page=256
+ *     0x001200├──────────────┤
+ *             │  第2页: 244B │  chunk=244, remain_in_page=256（实际只取 244）
+ *             │  (剩余12B空) │  写入完毕，remain=0，退出循环
+ *     0x001300├──────────────┤
+ *             │  (未写)      │
+ *             └──────────────┘
+ *
+ *   如果 500 字节刚好跨扇区：
+ *
+ *     0x001000├──────────────┐ ← 扇区 4，已擦除
+ *             │  第1页: 256B │  chunk=256
+ *     0x001100├──────────────┤
+ *             │  第2页: 244B │  chunk=244，写完这页后 cur_addr=0x0011F4
+ *             │              │  此时 cur_sector = 0x0011F4/4096 = 4，还是扇区 4
+ *     0x001200├══════════════│ ← 扇区 5，进入新扇区！触发擦除！
+ *             │  (空 12B 跳过)│  因为 remain=0 了，所以不会写到这里
+ *             │              │
+ *     0x001300├──────────────┤
+ *             │  第3页: 256B │  如果还要写，会从这里开始
+ *             └──────────────┘
+ *
+ *   关键理解：
+ *     "扇区擦除"只在"cur_addr 跨入新扇区的那一瞬间"触发。
+ *     last_erased 变量就是用来记住"我已经擦过了，别重复擦"。
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ *  第五部分：流式写入框架 —— 为什么需要 Start→Feed→End 三步
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ *   问题场景：
+ *     W25Q64_FileWrite(data, size) 要求 data 一次性全部放在 RAM 里。
+ *     但 STM32F103C8 只有 20KB RAM，字库文件 2.4MB —— 差 120 倍！
+ *
+ *   核心洞察：
+ *     FileWrite 内部其实是一页页写的，不是一次性写的。
+ *     while 循环每次只写 256 字节，那就按每次 256 字节来喂就行了啊！
+ *
+ *   于是"流式写入"方案诞生：
+ *
+ *     传统方式（FileWrite）：
+ *       数据全在 RAM → 一次性调用 → 内部 while 循环跑完
+ *       ┌──────┐
+ *       │2.4MB │ → FileWrite() ──内部 while──→ Flash
+ *       │ RAM  │
+ *       └──────┘
+ *       ❌ RAM 装不下
+ *
+ *     流式方式（Stream）：
+ *       串口逐字节来 → 攒够 256B → 调用一次 StreamFeed → 逐页写入
+ *       ┌───┐
+ *       │1B │→ USART_IRQ ─→ g_RxBuf[] ─→ StreamFeed(256B) ─→ Flash
+ *       └───┘
+ *       ✅ 只需要 256B 缓冲区
+ *
+ *   三步拆解：
+ *
+ *   ① StreamStart(id, size)  —— "开单子"
+ *     ├─ 查重：id 已存在？标记旧条目删除
+ *     ├─ 空间计算：下一个空闲地址在哪？（复用 CalcNextFreeAddr）
+ *     ├─ 容量检查：剩余空间够不够写 size 字节？
+ *     └─ 记录状态：id, size, 起始地址, 已写字节数=0
+ *
+ *   ② StreamFeed(data, len)  —— "分装搬运"（核心，和 WriteVariableData 一样）
+ *     ├─ 溢出检查：已写 + 本次 > 总大小？拒绝
+ *     ├─ 跨页拆分：while(offset < len) { 计算页剩余 → 确定 chunk → 扇区擦除 → 页写入 }
+ *     ├─ 更新 g_BytesWritten
+ *     └─ 进度打印
+ *
+ *   ③ StreamEnd()  —— "验货 + 登记"
+ *     ├─ 完整性检查：g_BytesWritten == g_FileSize？
+ *     ├─ CRC 计算：从 Flash 读回数据，逐段计算 CRC16
+ *     ├─ 目录登记：找一个空闲目录条目，写入 id/size/addr/crc
+ *     └─ 目录回写：把整本登记本写回 Flash
+ *
+ *   对照表：
+ *   ┌───────────────────────┬───────────────────────────┐
+ *   │  FileWrite 的步骤      │  Stream 的对应调用          │
+ *   ├───────────────────────┼───────────────────────────┤
+ *   │ 查重 + 空间计算 + 容量 │  StreamStart()              │
+ *   │ WriteVariableData()   │  多次 StreamFeed()          │
+ *   │ CRC + 目录登记 + 回写 │  StreamEnd()                │
+ *   └───────────────────────┴───────────────────────────┘
+ *
+ *   唯一区别：驱动循环的位置不同。
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ *  第六部分：串口接收状态机 —— 如何把"逐字节来"变成"一页页写"
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ *   整体架构：3 个线程（任务）协同工作
+ *
+ *     USART1_IRQHandler (中断)     LoaderTask (任务)       StartUpTask (任务)
+ *     ──────────────────────       ────────────────        ─────────────────
+ *     每收 1 字节：                每 5ms 检查一次：         初始化后触发下载
+ *       g_RxBuf[idx++]=byte         ┌─ 空闲超时？→ flush     ↓
+ *       if idx>=256:                │  ┌─ 收完了？→ FINISH   调用 SerialFlashLoader_Start()
+ *         StreamFeed(g_RxBuf,256)   │  │                     设置 g_State = RECEIVING
+ *         idx=0                     │  │                     printf("请发文件")
+ *       g_LastRxTick = now          │  │
+ *                                   ▼  ▼
+ *                                 STATE_FINISHING:
+ *                                   StreamEnd()
+ *                                   STATE → IDLE
+ *
+ *   关键设计：空闲超时排空
+ *
+ *     问题：文件末段往往不足 256 字节。
+ *           比如总大小 2527232，前 9872 页（256B 一页）都满了，
+ *           最后一页只有 100 字节。此时 g_RxIdx=100 < 256，
+ *           永远不会触发中断里的 flush，LoaderTask 永远等不到"完成"。
+ *
+ *     解决：LoaderTask 每 5ms 检查一次 g_LastRxTick。
+ *           如果超过 100ms 没收到新字节（说明 PC 发完了），
+ *           且 g_RxIdx > 0（缓冲区还有残余），就主动 flush：
+ *
+ *             if (g_RxIdx > 0 && (now - g_LastRxTick) > 100ms) {
+ *                 W25Q64_StreamFeed(g_RxBuf, g_RxIdx);   // 把残余喂进去
+ *                 g_RxIdx = 0;
+ *             }
+ *
+ *   状态机设计：
+ *
+ *       STATE_IDLE ──── SerialFlashLoader_Start() ────→ STATE_RECEIVING
+ *                                                            │
+ *                                                            │ 数据收完 + 缓冲清空
+ *                                                            ▼
+ *                                                      STATE_FINISHING
+ *                                                            │
+ *                                                            │ StreamEnd() 返回
+ *                                                            ▼
+ *                                                       STATE_IDLE
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ *  第七部分：main.c 全链路 —— 从按下 RESET 到烧录完成
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ *   main() 启动流程：
+ *
+ *   ① 硬件初始化
+ *     ├─ USART_Config()       → 串口就绪，printf 可用
+ *     └─ W25Q64_Init()        → SPI 总线 + GPIO 就绪，读出 Flash ID
+ *
+ *   ② 启动 FreeRTOS，创建 2 个任务
+ *     ├─ StartUpTask（优先级 1）
+ *     └─ LoaderTask（优先级 2）
+ *
+ *   StartUpTask 执行流程：
+ *
+ *   ③ 文件系统初始化
+ *     └─ W25Q64_FileSysInit()
+ *        ├─ 从 Flash 目录区读出 128 条记录 → g_DirCache[]
+ *        ├─ 检查 0x5A 标记，跳过 0xFF/0x00（空条目）
+ *        └─ 计算 g_NextFreeAddr = 被占用的最大地址 + 对齐
+ *
+ *   ④ 字库寻址
+ *     └─ my_font_SCH_16_init()
+ *        └─ W25Q64_GetFileAddr(0, &addr, &size)
+ *           └─ 在 g_DirCache[] 中找 id=0 且 used=0x5A 的条目
+ *              如果找到 → 记录 addr 和 size（后续 LVGL 字体引擎用）
+ *              如果没找到 → 记录为 0（等待下载后再初始化）
+ *
+ *   ⑤ 倒计时 3 秒 → 自动触发下载
+ *     └─ SerialFlashLoader_Start(0, 2527232)
+ *        ├─ W25Q64_StreamStart(0, 2527232)
+ *        │  ├─ 查重 id=0：找到则标记旧条目为 0xA5
+ *        │  ├─ CalcNextFreeAddr() → g_FlashAddr
+ *        │  ├─ 容量检查
+ *        │  └─ 初始化状态变量
+ *        ├─ 清空 g_RxBuf[]、g_RxIdx=0
+ *        └─ g_State = STATE_RECEIVING
+ *
+ *   LoaderTask 执行流程（后台循环监控）：
+ *
+ *     每 5ms 执行一次：
+ *       if STATE_RECEIVING:
+ *         ├─ 空闲超时？→ flush 残余数据
+ *         └─ StreamIsDone() && g_RxIdx==0？→ STATE_FINISHING
+ *       if STATE_FINISHING:
+ *         └─ W25Q64_StreamEnd()
+ *            ├─ 从 Flash 读回 2527232 字节，分页计算 CRC16
+ *            ├─ 找一个空闲目录条目，写入 {id=0, size=2527232, addr, crc}
+ *            ├─ 目录回写 Flash
+ *            └─ 更新 g_NextFreeAddr
+ *
+ *   USART1_IRQHandler（每个字节中断）：
+ *
+ *     收到 1 字节 → g_LastRxTick = now
+ *                → g_RxBuf[g_RxIdx++] = byte
+ *                → if idx >= 256: StreamFeed() → idx=0
+ *
+ *   PC 端（fireTools）动作：
+ *
+ *     ┌─ 打开发送窗口
+ *     ├─ 选择 .bin 文件
+ *     └─ 点击发送 → 串口逐字节发出 2,527,232 字节
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ *  第八部分：CRC16 校验 —— 如何保证数据没坏
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ *   为什么需要 CRC？
+ *     串口传输可能受干扰、SPI 写入可能出错、Flash 本身也可能有坏块。
+ *     CRC 相当于给数据算一个"指纹"——写之前算一次，读回来再算一次，比对无误就放心。
+ *
+ *   CRC16-CCITT 算法：
+ *     多项式：0x1021
+ *     初始值：0xFFFF
+ *
+ *     核心循环（处理每一个字节）：
+ *       crc ^= (data[i] << 8);         // 把当前字节移到高位参与异或
+ *       for (j = 0; j < 8; j++) {      // 逐位处理
+ *           if (crc & 0x8000)          // 最高位是 1？
+ *               crc = (crc << 1) ^ 0x1021;  // 左移一位然后异或多项式
+ *           else
+ *               crc = (crc << 1);      // 直接左移
  *       }
  *
- *    第三步：更新全局状态
- *       g_BytesWritten += len
- *       g_LastErasedSector 更新
+ *   分步计算：
+ *     2.4MB 不可能一次性装进 RAM，所以要 W25Q64_CRC16_Update() 分步算：
+ *       从 Flash 读 256 字节 → 算一段 → 读下一段 → 继续算 → ... → 得到最终 CRC
  *
- *   【参数说明】
- *    - data: 这一片数据的指针（通常指向 g_RxBuf，即 256 字节缓冲数组）
- *    - len:  这一片数据的长度（通常 256 字节，最后一筐可能不足 256）
+ * ════════════════════════════════════════════════════════════════════════════
+ *  第九部分：你自己动手的顺序（学习路线）
+ * ════════════════════════════════════════════════════════════════════════════
  *
- *   @return 0=成功, -1=超过文件大小
+ *  📝 第一关：理解硬件（30 分钟）
+ *     □ 背下三条铁律：写前擦除 / 最小擦除 4KB / 最多写 256B
+ *     □ 画一张 W25Q64 的层级结构图（块→扇区→页）
+ *     □ 搞懂 Page Program 命令的工作方式（SPI 发指令 + 发地址 + 发数据）
+ *
+ *  📝 第二关：理解仓库模型（30 分钟）
+ *     □ 为什么要分目录区和数据区？
+ *     □ 目录条目为什么设计成 16 字节？
+ *     □ "标记删除" 和 "物理删除" 的区别？为什么选标记删除？
+ *     □ 画一张"仓库 + 登记本"的图，标上 0x000000, 0x004000, 0x800000
+ *
+ *  📝 第三关：手写 CalcNextFreeAddr（30 分钟）
+ *     □ 关闭本文件，自己在纸上写伪代码
+ *     □ 理解为什么最后要对齐到扇区边界
+ *     □ 思考：如果目录区是空的，返回值是多少？
+ *
+ *  📝 第四关：手写 WriteVariableData（1 小时，最难的核心）
+ *     □ 先在纸上画一个场景：从 0x001100 开始写 500 字节
+ *     □ 手动推导每一步的 remain_in_page, chunk, cur_sector, last_erased
+ *     □ 然后写代码，包含 3 个关键变量 + while 循环
+ *     □ 验证：跨页拆分正确吗？跨扇区擦除触发了吗？最后一次写入量对吗？
+ *
+ *  📝 第五关：理解流式写入（30 分钟）
+ *     □ FileWrite 和 Stream 三步的对照关系
+ *     □ StreamFeed 的 while 循环为什么和 WriteVariableData 一样？
+ *     □ 为什么需要有 StreamStart 和 StreamEnd？
+ *
+ *  📝 第六关：串口接收状态机（30 分钟）
+ *     □ 为什么需要缓冲区（256 字节）？
+ *     □ 为什么需要空闲超时排空？
+ *     □ 中断和任务之间怎么协调（不抢数据）？
+ *
+ *  📝 第七关：整合 main.c（30 分钟）
+ *     □ 写出 main() → StartUpTask → LoaderTask 的完整执行流程
+ *     □ 画一张时序图（每个函数什么时候调用）
+ *     □ 搞懂"断电重启后地址迁移"的验证方法
+ *
+ *  📝 毕业设计：自己实现一遍
+ *     □ 从空白项目开始
+ *     □ 先写 W25Q64_Init（SPI 通信）
+ *     □ 再写目录管理（读写目录区）
+ *     □ 再写货物分装（WriteVariableData）
+ *     □ 再写流式写入（Stream 三步）
+ *     □ 最后接上串口接收状态机
+ *     □ 随便找个 .bin 文件测试，断电重启验证
+ *
+ *  如果你能独立完成以上全部，你就彻底掌握了 W25Q64 外部 Flash 烧录。
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ *  附：关键变量一览
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ *   全局变量（g_ 前缀）：
+ *     g_DirCache[128]  — 目录缓存（128 条 × 16 字节，存在 RAM 里）
+ *     g_DirDirty        — 目录改过没？（1=要回写 Flash）
+ *     g_NextFreeAddr    — 下一个空闲地址（目录初始化后算出来）
+ *     g_FlashAddr       — 当前下载的起始地址（StreamStart 时确定）
+ *     g_FileID          — 当前下载的文件编号
+ *     g_FileSize        — 当前下载的文件总大小（字节）
+ *     g_BytesWritten    — 已写入字节数（边写边加）
+ *     g_LastErasedSector— 上一次擦除的扇区号（避免重复擦除）
+ *     g_RxBuf[256]      — 串口接收缓冲区
+ *     g_RxIdx           — 缓冲区写入位置
+ *     g_LastRxTick      — 最后一次收到字节的时刻（超时排空用）
+ *     g_State           — 状态机：IDLE / RECEIVING / FINISHING
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ *  附：核心代码片段（可直接抄写练习）
+ * ════════════════════════════════════════════════════════════════════════════
  */
-int32_t W25Q64_StreamFeed(const uint8_t *data, uint16_t len)
+
+#if 0  /* ══════════════ 纯教学文档，编译器跳过 ══════════════ */
+
+/* ────────────────────────────────────────────────────────────────────────
+ * 片段 1：空间计算
+ * ──────────────────────────────────────────────────────────────────────── */
+
+uint32_t W25Q64_CalcNextFreeAddr(void)
 {
-    uint32_t remain_in_page;    /* 当前页还剩多少字节可用      */
-    uint32_t chunk;             /* 这一轮实际写入多少字节      */
-    uint32_t offset = 0;        /* data[] 的读取偏移           */
-    uint32_t cur_addr;          /* 当前写入的 Flash 地址       */
-    uint32_t last_erased = g_LastErasedSector;
+    uint32_t next = W25Q64_DATA_START_ADDR;  // 从数据区最开头开始
 
-    if (data == NULL || len == 0) return 0;
-
-    /* ① 溢出检查 */
-    if (g_BytesWritten + len > g_FileSize) {
-        printf("[Stream] 错误：数据超量！已写 %lu + 本次 %u > 总大小 %lu\n",
-               (unsigned long)g_BytesWritten, len, (unsigned long)g_FileSize);
-        return -1;
+    /* 遍历目录，找被占用的最大地址 */
+    for (int i = 0; i < W25Q64_DIR_MAX_ENTRIES; i++) {
+        if (g_DirCache[i].used == 0x5A) {
+            uint32_t end = g_DirCache[i].start_addr + g_DirCache[i].size;
+            if (end > next)
+                next = end;
+        }
     }
 
-    cur_addr = g_FlashAddr + g_BytesWritten;  /* 当前写到哪里 */
+    /* 对齐到扇区边界 */
+    if (next % W25Q64_SECTOR_SIZE != 0)
+        next = (next / W25Q64_SECTOR_SIZE + 1) * W25Q64_SECTOR_SIZE;
 
-    /*
-     * ② 核心循环：处理跨页
-     */
-    while (offset < len) {
+    return next;
+}
 
-        /* a. 计算当前页还剩多少空间 */
-        remain_in_page = W25Q64_PAGE_SIZE - (cur_addr % W25Q64_PAGE_SIZE);
+/* ────────────────────────────────────────────────────────────────────────
+ * 片段 2：货物分装（核心！）
+ * ──────────────────────────────────────────────────────────────────────── */
 
-        /* b. 本次写入 = min(剩余页空间, 还没写入的数据量) */
-        chunk = (remain_in_page < (uint32_t)(len - offset))
-                    ? remain_in_page
-                    : (uint32_t)(len - offset);
+void W25Q64_WriteVariableData(uint32_t addr, const uint8_t *data, uint32_t size)
+{
+    uint32_t remain = size;                 // 还剩多少没写
+    uint32_t offset = 0;                    // data[] 的读取偏移
+    uint32_t cur_addr = addr;               // 当前 Flash 地址
+    uint32_t last_erased = 0xFFFFFFFF;      // 上次擦除的扇区号（初始为不可能值）
 
-        /* c. 扇区擦除检查（进新扇区才擦，避免重复擦） */
+    while (remain > 0) {
+        /* ① 空间计算：当前页还剩多少？ */
+        uint32_t remain_in_page = W25Q64_PAGE_SIZE - (cur_addr % W25Q64_PAGE_SIZE);
+
+        /* ② 确定本批写多少 */
+        uint32_t chunk = (remain_in_page < remain) ? remain_in_page : remain;
+
+        /* ③ 扇区擦除（进新扇区才擦） */
         uint32_t cur_sector = cur_addr / W25Q64_SECTOR_SIZE;
         if (cur_sector != last_erased) {
             W25Q64_SectorErase(cur_addr);
             last_erased = cur_sector;
         }
 
-        /* d. 写入这一"小片"到 Flash */
+        /* ④ 页写入 */
+        W25Q64_PageWrite(cur_addr, data + offset, chunk);
+
+        /* ⑤ 推进 */
+        cur_addr += chunk;
+        offset   += chunk;
+        remain   -= chunk;
+    }
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ * 片段 3：StreamFeed（和上面几乎一样，只是每次只写 len 字节）
+ * ──────────────────────────────────────────────────────────────────────── */
+
+int32_t W25Q64_StreamFeed(const uint8_t *data, uint16_t len)
+{
+    uint32_t remain_in_page;
+    uint32_t chunk;
+    uint32_t offset = 0;
+    uint32_t cur_addr = g_FlashAddr + g_BytesWritten;
+    uint32_t last_erased = g_LastErasedSector;
+
+    if (data == NULL || len == 0) return 0;
+
+    /* 溢出检查 */
+    if (g_BytesWritten + len > g_FileSize) return -1;
+
+    /* 跨页拆分循环 */
+    while (offset < len) {
+        remain_in_page = W25Q64_PAGE_SIZE - (cur_addr % W25Q64_PAGE_SIZE);
+        chunk = (remain_in_page < (uint32_t)(len - offset))
+                    ? remain_in_page : (uint32_t)(len - offset);
+
+        uint32_t cur_sector = cur_addr / W25Q64_SECTOR_SIZE;
+        if (cur_sector != last_erased) {
+            W25Q64_SectorErase(cur_addr);
+            last_erased = cur_sector;
+        }
+
         W25Q64_PageWrite(cur_addr, data + offset, (uint16_t)chunk);
 
-        /* e. 推进指针 */
         cur_addr += chunk;
         offset   += chunk;
     }
 
-    /* ③ 更新全局状态 */
     g_BytesWritten     += len;
     g_LastErasedSector  = last_erased;
 
-    /* ④ 打印进度（每 4KB 打印一次，避免刷屏） */
-    if ((g_BytesWritten % 4096) < len || g_BytesWritten >= g_FileSize) {
-        printf("[Stream] 进度: %lu / %lu 字节 (%lu%%)\n",
-               (unsigned long)g_BytesWritten,
-               (unsigned long)g_FileSize,
-               (unsigned long)(g_BytesWritten * 100 / g_FileSize));
-    }
-
     return 0;
 }
 
+/* ────────────────────────────────────────────────────────────────────────
+ * 片段 4：串口接收状态机（main.c 里的 LoaderTask）
+ * ──────────────────────────────────────────────────────────────────────── */
 
-/* --------------------------------------------------------------------------
- * 函数 3/5: W25Q64_StreamEnd —— 关闭"小门"，收尾登记
- *
- * 【教学 —— 这个函数干了什么？】
- *   1. 完整性检查：收到的总字节数 == 预期文件大小？
- *   2. 从 Flash 读回数据，计算 CRC16 校验码（确认写入无误）
- *   3. 在目录区登记这条记录（填写 used/id/size/start_addr/crc16）
- *   4. 把目录缓存回写到 Flash
- *   5. 更新 g_NextFreeAddr（为下一个文件写入做准备）
- *
- *   @return 0=成功, -1=数据不完整, -2=目录已满
- */
-int32_t W25Q64_StreamEnd(void)
+void LoaderTask(void *p)
 {
-    int16_t entry_idx;
-    uint16_t crc;
-
-    /* ① 完整性检查 */
-    if (g_BytesWritten != g_FileSize) {
-        printf("[Stream] 错误：数据不完整！预期 %lu 字节，实收 %lu 字节\n",
-               (unsigned long)g_FileSize, (unsigned long)g_BytesWritten);
-        return -1;
-    }
-
-    /* ② 从 Flash 读回数据计算 CRC */
-    printf("[Stream] 正在校验 CRC...\n");
-    crc = W25Q64_CRC16_FromFlash(g_FlashAddr, g_FileSize);
-
-    /* ③ 在目录中找空位登记 */
-    entry_idx = W25Q64_FindFreeEntry();
-    if (entry_idx < 0) {
-        printf("[Stream] 错误：目录已满！\n");
-        return -2;
-    }
-
-    g_DirCache[entry_idx].used       = 0x5A;
-    g_DirCache[entry_idx].id         = g_FileID;
-    g_DirCache[entry_idx].size       = g_FileSize;
-    g_DirCache[entry_idx].start_addr = g_FlashAddr;
-    g_DirCache[entry_idx].crc16      = crc;
-    g_DirDirty = 1;
-
-    /* ④ 回写目录到 Flash */
-    W25Q64_DirFlush();
-
-    /* ⑤ 更新全局空闲地址 */
-    g_NextFreeAddr = W25Q64_CalcNextFreeAddr();
-
-    printf("[Stream] 写入完成！id=%u, 大小=%lu 字节, CRC=0x%04X\n",
-           (unsigned int)g_FileID, (unsigned long)g_FileSize, crc);
-
-    return 0;
-}
-
-
-/* --------------------------------------------------------------------------
- * 函数 4/5: W25Q64_CRC16_FromFlash —— 从 Flash 读取并计算 CRC
- *
- * 【教学 —— 为什么要从 Flash 读回来校验？】
- *   流式写入时数据不留在 RAM，所以写完后再从 Flash 分页读回来算 CRC，
- *   用来确认"Flash 里存的数据"和"PC 发来的原始数据"一致。
- *
- *   如果 PC 端也计算了 CRC 并发送过来，两边一比对就能 100% 确认正确。
- */
-uint16_t W25Q64_CRC16_FromFlash(uint32_t addr, uint32_t size)
-{
-    uint16_t crc = 0xFFFF;
-    uint8_t  buf[256];        /* 每次读一页，分页计算 */
-    uint32_t offset = 0;
-
-    while (offset < size) {
-        uint32_t chunk = (size - offset > 256) ? 256 : (size - offset);
-        W25Q64_Read(addr + offset, buf, chunk);
-        crc = W25Q64_CRC16_Update(crc, buf, chunk);  /* 分步累计 */
-        offset += chunk;
-    }
-    return crc;
-}
-
-
-/* --------------------------------------------------------------------------
- * 函数 5/5: W25Q64_CRC16_Update —— CRC16 分步更新（支持流式计算）
- *
- * 【教学 —— 为什么需要 Update 版本？】
- *   CRC 算法天然支持"分步"模式：
- *     crc = 0xFFFF;
- *     crc = CRC16_Update(crc, 第1包, 256);
- *     crc = CRC16_Update(crc, 第2包, 256);
- *     ...
- *     最终 crc 和一次性算完整数据的结果完全一样！
- */
-uint16_t W25Q64_CRC16_Update(uint16_t crc, const uint8_t *data, uint32_t len)
-{
-    uint32_t i, j;
-
-    for (i = 0; i < len; i++) {
-        crc ^= (uint16_t)(data[i] << 8);
-        for (j = 0; j < 8; j++) {
-            if (crc & 0x8000) {
-                crc = (crc << 1) ^ 0x1021;  /* CRC-CCITT 多项式 */
-            } else {
-                crc = crc << 1;
-            }
-        }
-    }
-    return crc;
-}
-
-
-/*===========================================================================
- * ╔════════════════════════════════════════════════════════════════╗
- * ║  第四部分：要加到 User/main.c 的代码（~70 行）                ║
- * ╚════════════════════════════════════════════════════════════════╝
- *
- * 下面是"串口接收 + 状态管理"的全部代码，放在 main.c 中。
- * ===========================================================================*/
-
-/* ---------- 4.1 接收缓冲区 —— "快递暂存筐" ---------- */
-#define SERIAL_BUF_SIZE     256         /* 一页 = 256 字节 */
-static uint8_t  g_RxBuf[SERIAL_BUF_SIZE];   /* 接收筐（暂存从串口收的字节） */
-static uint16_t g_RxIdx = 0;               /* 筐指针（当前已装了几个字节） */
-
-/* ---------- 4.2 状态机 —— "入库流程控制" ---------- */
-typedef enum {
-    STATE_IDLE      = 0,   /* 空闲：等待"开始写入"指令 */
-    STATE_RECEIVING = 1,   /* 接收中：正在从串口收数据并写入 Flash */
-    STATE_FINISHING = 2,   /* 收尾中：CRC 校验 + 登记目录 */
-} StreamState_t;
-
-static StreamState_t g_State = STATE_IDLE;
-
-
-/* ---------- 4.3 USART1 中断服务函数 —— "签收快递"的核心 ---------- */
-
-/**
- * USART1_IRQHandler —— 串口接收中断
- *
- * 【教学 —— 这个函数的工作流】
- *
- *   每次串口收到 1 个字节，硬件自动触发此中断：
- *
- *   ① 检查是否是 RXNE 中断（接收寄存器非空）
- *   ② 读走收到的字节（必须读！否则中断会一直重复触发）
- *   ③ 如果当前状态是 RECEIVING：
- *        - 把字节放进 g_RxBuf[g_RxIdx]
- *        - g_RxIdx++
- *        - 如果 g_RxIdx == 256（筐满了）
- *            → 调用 W25Q64_StreamFeed(g_RxBuf, 256) 写入 Flash
- *            → 清空 g_RxIdx = 0，继续接下一筐
- *            → 如果 g_BytesWritten >= g_FileSize → 切到 FINISHING 状态
- *   ④ 处理溢出错误（ORE 中断标志）
- *
- * 【重要！⚠️】
- *   - 中断里不能调用 printf！耗时太长会导致丢数据
- *   - W25Q64_StreamFeed 里的 W25Q64_PageWrite 约几十微秒，可以接受
- *   - printf 放在主循环或低优先级任务里调用
- *
- * 【注意】
- *   Keil 的 startup 文件里通常已有弱定义的 USART1_IRQHandler，
- *   你在 main.c 里写了这个函数就会覆盖它。
- *   如果你的工程里中断向量表 (startup_stm32f10x_hd.s) 用的是
- *   其他名字，请对照修改。
- */
-void USART1_IRQHandler(void)
-{
-    /* ① 必须是 RXNE 中断才处理 */
-    if (USART_GetITStatus(DEBUG_USARTx, USART_IT_RXNE) != RESET) {
-
-        /* ② 读走收到的字节（读操作自动清除 RXNE 标志位） */
-        uint8_t byte = (uint8_t)USART_ReceiveData(DEBUG_USARTx);
-
-        /* ③ 根据状态处理 */
-        if (g_State == STATE_RECEIVING) {
-
-            /* 放进筐里 */
-            g_RxBuf[g_RxIdx] = byte;
-            g_RxIdx++;
-
-            /* 筐满了 → 写入 Flash */
-            if (g_RxIdx >= SERIAL_BUF_SIZE) {
-                W25Q64_StreamFeed(g_RxBuf, SERIAL_BUF_SIZE);
+    TickType_t now;
+    while (1) {
+        switch (g_State) {
+        case STATE_RECEIVING:
+            now = xTaskGetTickCount();
+            /* 空闲超时排空尾数 */
+            if (g_RxIdx > 0 && (now - g_LastRxTick) > pdMS_TO_TICKS(100)) {
+                W25Q64_StreamFeed(g_RxBuf, g_RxIdx);
                 g_RxIdx = 0;
-
-                /* 检查是否全部收完了 */
-                if (g_BytesWritten >= g_FileSize) {
-                    g_State = STATE_FINISHING;
-                }
             }
+            /* 收完了？进入 FINISHING */
+            if (W25Q64_StreamIsDone() && g_RxIdx == 0) {
+                g_State = STATE_FINISHING;
+            }
+            break;
+        case STATE_FINISHING:
+            W25Q64_StreamEnd();
+            g_State = STATE_IDLE;
+            break;
         }
-    }
-
-    /* ④ 处理溢出错误（ORE 中断） */
-    if (USART_GetITStatus(DEBUG_USARTx, USART_IT_ORE) != RESET) {
-        (void)USART_ReceiveData(DEBUG_USARTx);  /* 读一下 DR 清除标志 */
+        vTaskDelay(pdMS_TO_TICKS(5));
     }
 }
 
-
-/* ---------- 4.4 主循环处理函数 —— "入库管家" ---------- */
+#endif  /* ════════════════════ #if 0 结束 ════════════════════ */
 
 /**
- * SerialFlashLoader_Process —— 在主循环中调用，管理收尾状态
+ * ════════════════════════════════════════════════════════════════════════════
+ * 总结：你现在的代码比你想象的更牛逼
+ * ════════════════════════════════════════════════════════════════════════════
  *
- * 【教学 —— 为什么要在主循环处理？】
- *   中断里已经完成了"接收 + 写页"的工作。
- *   但 StreamEnd（含 CRC 计算，耗时较长）应该放在主循环里处理。
+ * 你的 W25Q64_FileWrite() 已经是一个完整的小型文件系统写入模块。
  *
- * 【调用方式】
- *   在 main() 的 while(1) 或 FreeRTOS 任务中调用：
- *       while(1) {
- *           SerialFlashLoader_Process();
- *           vTaskDelay(10);
- *       }
+ * 这次做的事情，本质上不是"重写"，而是"拆解"：
+ *
+ *   把一个大函数拆成三个小函数，
+ *   保留底层算法（货物分装、CRC、目录管理）一切不变，
+ *   只改变数据的来源（从 RAM 数组 → 串口中断）。
+ *
+ * 新增代码不到 100 行，核心思想全复用。
+ *
+ * 这才是好的工程设计：不推翻重来，而是在已有基础上开一扇小门。
  */
-void SerialFlashLoader_Process(void)
-{
-    switch (g_State) {
-
-    case STATE_IDLE:
-        /* 空闲，等待"开始写入"命令 */
-        break;
-
-    case STATE_RECEIVING:
-        /* 收到了全部数据 + 筐已空 → 切换到收尾状态 */
-        if (g_BytesWritten >= g_FileSize && g_RxIdx == 0) {
-            g_State = STATE_FINISHING;
-        }
-        break;
-
-    case STATE_FINISHING:
-        printf("\n[Loader] 数据接收完毕，正在收尾...\n");
-
-        if (W25Q64_StreamEnd() == 0) {
-            printf("[Loader] ✅ 文件写入成功！\n");
-        } else {
-            printf("[Loader] ❌ 文件写入失败！\n");
-        }
-
-        /* 清理状态，回到空闲 */
-        g_State  = STATE_IDLE;
-        g_RxIdx  = 0;
-        memset(g_RxBuf, 0, SERIAL_BUF_SIZE);
-        printf("[Loader] 就绪，等待下一个文件...\n");
-        break;
-
-    default:
-        break;
-    }
-}
-
-
-/* ---------- 4.5 启动接收函数 —— "开始接货" ---------- */
-
-/**
- * SerialFlashLoader_StartReceive —— 开始接收文件
- *
- * 【教学 —— 怎么调用？】
- *   方式 1（最简单，用于调试）：
- *     在 main() 初始化时直接调用：
- *       SerialFlashLoader_StartReceive(0, 212992);
- *       // id=0, 大小 212992 字节（GB2312 16x16 点阵）
- *
- *   方式 2（更灵活）：
- *     通过串口发命令，如 "WRITE 0 212992\n"，解析后调用
- *
- * @param  id    文件编号
- * @param  size  文件总大小（字节数，要提前知道）
- */
-void SerialFlashLoader_StartReceive(uint16_t id, uint32_t size)
-{
-    if (g_State != STATE_IDLE) {
-        printf("[Loader] 错误：当前正在接收文件，请等待完成\n");
-        return;
-    }
-
-    if (W25Q64_StreamStart(id, size) != 0) {
-        printf("[Loader] 错误：无法开始写入\n");
-        return;
-    }
-
-    /* 清空接收筐 */
-    g_RxIdx = 0;
-    memset(g_RxBuf, 0, SERIAL_BUF_SIZE);
-
-    /* 切换到接收状态 */
-    g_State = STATE_RECEIVING;
-
-    printf("[Loader] ✅ 已准备就绪，请用 fireTools 发送 .bin 文件\n");
-}
-
-
-/*===========================================================================
- * ╔════════════════════════════════════════════════════════════════╗
- * ║  第五部分：USART_Config() 里需要补的中断使能代码              ║
- * ╚════════════════════════════════════════════════════════════════╝
- *
- * 你现有的 bsp_usart.c → USART_Config() 只初始化了串口 GPIO 和参数，
- * 但没有开启"接收中断"（RXNE）。需要在函数末尾加上：
- *
- *   // 开启 USART 接收中断
- *   USART_ITConfig(DEBUG_USARTx, USART_IT_RXNE, ENABLE);
- *
- *   // 配置 NVIC 中断优先级
- *   NVIC_InitTypeDef NVIC_InitStructure;
- *   NVIC_InitStructure.NVIC_IRQChannel = DEBUG_USART_IRQ;
- *   NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
- *   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
- *   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
- *   NVIC_Init(&NVIC_InitStructure);
- *
- *===========================================================================*/
-
-
-/*===========================================================================
- * ╔════════════════════════════════════════════════════════════════╗
- * ║  第六部分：完整的 main.c 伪代码（整合后长什么样）            ║
- * ╚════════════════════════════════════════════════════════════════╝
- *
- * int main(void)
- * {
- *     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
- *
- *     USART_Config();           // 串口初始化（含 RXNE 中断使能）
- *     printf("系统启动...\n");
- *
- *     W25Q64_FileSysInit();     // 初始化 W25Q64 文件系统
- *
- *     // 准备接收字库（id=0, 大小看你的 .bin 文件属性）
- *     SerialFlashLoader_StartReceive(0, 212992);
- *
- *     // LVGL 初始化
- *     lv_init();
- *     // ... lv_disp_drv_init, lv_indev_drv_init ...
- *
- *     while(1) {
- *         SerialFlashLoader_Process();  // ← 就这一行！
- *         lv_timer_handler();
- *         vTaskDelay(5);                // 或 HAL_Delay(5)
- *     }
- * }
- *
- *===========================================================================*/
-
-
-/*===========================================================================
- * ╔════════════════════════════════════════════════════════════════╗
- * ║  学习检查清单 —— 学完后自测                                   ║
- * ╚════════════════════════════════════════════════════════════════╝
- *
- *  □ 串口每收到 1 字节，触发什么？         → USART1_IRQHandler 中断
- *  □ 收到的字节先存在哪里？               → g_RxBuf[]（接收筐）
- *  □ 什么时候把数据写入 Flash？           → 筐满了（256 字节）时
- *  □ StreamFeed 怎么处理跨页？            → 算页剩余空间，while 循环拆分写入
- *  □ 什么时候擦除扇区？                   → 进入新扇区时（每 4KB 一次）
- *  □ 状态机有几个状态？                   → 3 个（IDLE / RECEIVING / FINISHING）
- *  □ StreamEnd 做了什么？                 → 完整性检查、CRC 校验、登记目录
- *  □ 中断函数里能调用 printf 吗？         → 不推荐，耗时太长会丢数据
- *
- *  全部答对 → 可以自己动手写了！
- *===========================================================================*/
-
-
-#endif  /* ════════════════ #if 0 结束，以下不编译 ════════════════ */

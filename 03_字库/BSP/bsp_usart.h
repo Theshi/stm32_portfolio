@@ -6,18 +6,18 @@
 #include <stdio.h>
 
 /** 
-  * ´®¿Úºê¶¨Òå£¬²»Í¬µÄ´®¿Ú¹ÒÔØµÄ×ÜÏßºÍIO²»Ò»Ñù£¬ÒÆÖ²Ê±ÐèÒªÐÞ¸ÄÕâ¼¸¸öºê
-	* 1-ÐÞ¸Ä×ÜÏßÊ±ÖÓµÄºê£¬uart1¹ÒÔØµ½apb2×ÜÏß£¬ÆäËûuart¹ÒÔØµ½apb1×ÜÏß
-	* 2-ÐÞ¸ÄGPIOµÄºê
+  * ï¿½ï¿½ï¿½Úºê¶¨ï¿½å£¬ï¿½ï¿½Í¬ï¿½Ä´ï¿½ï¿½Ú¹ï¿½ï¿½Øµï¿½ï¿½ï¿½ï¿½ßºï¿½IOï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö²Ê±ï¿½ï¿½Òªï¿½Þ¸ï¿½ï¿½â¼¸ï¿½ï¿½ï¿½ï¿½
+	* 1-ï¿½Þ¸ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ÓµÄºê£¬uart1ï¿½ï¿½ï¿½Øµï¿½apb2ï¿½ï¿½ï¿½ß£ï¿½ï¿½ï¿½ï¿½ï¿½uartï¿½ï¿½ï¿½Øµï¿½apb1ï¿½ï¿½ï¿½ï¿½
+	* 2-ï¿½Þ¸ï¿½GPIOï¿½Äºï¿½
   */
 	
-// ´®¿Ú1-USART1
+// ï¿½ï¿½ï¿½ï¿½1-USART1
 #define  DEBUG_USARTx                   USART1
 #define  DEBUG_USART_CLK                RCC_APB2Periph_USART1
 #define  DEBUG_USART_APBxClkCmd         RCC_APB2PeriphClockCmd
 #define  DEBUG_USART_BAUDRATE           115200
 
-// USART GPIO Òý½Åºê¶¨Òå
+// USART GPIO ï¿½ï¿½ï¿½Åºê¶¨ï¿½ï¿½
 #define  DEBUG_USART_GPIO_CLK           (RCC_APB2Periph_GPIOA)
 #define  DEBUG_USART_GPIO_APBxClkCmd    RCC_APB2PeriphClockCmd
     
@@ -30,13 +30,13 @@
 #define  DEBUG_USART_IRQHandler         USART1_IRQHandler
 
 
-// ´®¿Ú2-USART2
+// ï¿½ï¿½ï¿½ï¿½2-USART2
 //#define  DEBUG_USARTx                   USART2
 //#define  DEBUG_USART_CLK                RCC_APB1Periph_USART2
 //#define  DEBUG_USART_APBxClkCmd         RCC_APB1PeriphClockCmd
 //#define  DEBUG_USART_BAUDRATE           115200
 
-//// USART GPIO Òý½Åºê¶¨Òå
+//// USART GPIO ï¿½ï¿½ï¿½Åºê¶¨ï¿½ï¿½
 //#define  DEBUG_USART_GPIO_CLK           (RCC_APB2Periph_GPIOA)
 //#define  DEBUG_USART_GPIO_APBxClkCmd    RCC_APB2PeriphClockCmd
 //    
@@ -48,13 +48,13 @@
 //#define  DEBUG_USART_IRQ                USART2_IRQn
 //#define  DEBUG_USART_IRQHandler         USART2_IRQHandler
 
-// ´®¿Ú3-USART3
+// ï¿½ï¿½ï¿½ï¿½3-USART3
 //#define  DEBUG_USARTx                   USART3
 //#define  DEBUG_USART_CLK                RCC_APB1Periph_USART3
 //#define  DEBUG_USART_APBxClkCmd         RCC_APB1PeriphClockCmd
 //#define  DEBUG_USART_BAUDRATE           115200
 
-//// USART GPIO Òý½Åºê¶¨Òå
+//// USART GPIO ï¿½ï¿½ï¿½Åºê¶¨ï¿½ï¿½
 //#define  DEBUG_USART_GPIO_CLK           (RCC_APB2Periph_GPIOB)
 //#define  DEBUG_USART_GPIO_APBxClkCmd    RCC_APB2PeriphClockCmd
 //    
@@ -66,13 +66,13 @@
 //#define  DEBUG_USART_IRQ                USART3_IRQn
 //#define  DEBUG_USART_IRQHandler         USART3_IRQHandler
 
-// ´®¿Ú4-UART4
+// ï¿½ï¿½ï¿½ï¿½4-UART4
 //#define  DEBUG_USARTx                   UART4
 //#define  DEBUG_USART_CLK                RCC_APB1Periph_UART4
 //#define  DEBUG_USART_APBxClkCmd         RCC_APB1PeriphClockCmd
 //#define  DEBUG_USART_BAUDRATE           115200
 
-//// USART GPIO Òý½Åºê¶¨Òå
+//// USART GPIO ï¿½ï¿½ï¿½Åºê¶¨ï¿½ï¿½
 //#define  DEBUG_USART_GPIO_CLK           (RCC_APB2Periph_GPIOC)
 //#define  DEBUG_USART_GPIO_APBxClkCmd    RCC_APB2PeriphClockCmd
 //    
@@ -85,13 +85,13 @@
 //#define  DEBUG_USART_IRQHandler         UART4_IRQHandler
 
 
-// ´®¿Ú5-UART5
+// ï¿½ï¿½ï¿½ï¿½5-UART5
 //#define  DEBUG_USARTx                   UART5
 //#define  DEBUG_USART_CLK                RCC_APB1Periph_UART5
 //#define  DEBUG_USART_APBxClkCmd         RCC_APB1PeriphClockCmd
 //#define  DEBUG_USART_BAUDRATE           115200
 
-//// USART GPIO Òý½Åºê¶¨Òå
+//// USART GPIO ï¿½ï¿½ï¿½Åºê¶¨ï¿½ï¿½
 //#define  DEBUG_USART_GPIO_CLK           (RCC_APB2Periph_GPIOC|RCC_APB2Periph_GPIOD)
 //#define  DEBUG_USART_GPIO_APBxClkCmd    RCC_APB2PeriphClockCmd
 //    
@@ -106,4 +106,4 @@
 
 void USART_Config(void);
 
-#endif /* __USART_H */
+#endif 

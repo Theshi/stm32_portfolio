@@ -337,7 +337,7 @@
               <MiscControls>--no-multibyte-chars</MiscControls>
               <Define>USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>.\Start;.\User;.\Library;.\System;.\FreeRTOS\portable;.\FreeRTOS\src;.\Hardware;.\Task;.\Hardware\Mpu6050;.\BSP;.\LVGL;.\LVGL\port;.\LVGL\src;.\UI;.\UI\IMG;.\Driver</IncludePath>
+              <IncludePath>.\Start;.\User;.\Library;.\System;.\FreeRTOS\portable;.\FreeRTOS\src;.\Hardware;.\Task;.\Hardware\Mpu6050;.\BSP;.\LVGL;.\LVGL\port;.\LVGL\src;.\UI;.\UI\IMG;.\Driver;.\UI\Font_SCh_16</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -2495,6 +2495,11 @@
               <FileName>WIFI_Logo.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\UI\IMG\WIFI_Logo.c</FilePath>
+            </File>
+            <File>
+              <FileName>my_font_SCH_16.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\UI\Font_SCh_16\my_font_SCH_16.c</FilePath>
             </File>
           </Files>
         </Group>

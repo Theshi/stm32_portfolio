@@ -80,8 +80,8 @@
 
 /* ---- 目录区 ---- */
 #define W25Q64_DIR_START_ADDR     0x000000            /* 目录区起始地址           */
-#define W25Q64_DIR_SIZE           (4 * W25Q64_SECTOR_SIZE) /* 目录区: 16KB        */
-#define W25Q64_DIR_SECTOR_COUNT   4                   /* 目录区占 4 个扇区       */
+#define W25Q64_DIR_SIZE            W25Q64_SECTOR_SIZE /* 目录区: 4KB        */
+#define W25Q64_DIR_SECTOR_COUNT   1                   /* 目录区占 1 个扇区       */
 #define W25Q64_DIR_MAX_ENTRIES    128                 /* 最多存 128 个文件的记录 */
 
 /* ---- 数据区 ---- */
@@ -159,7 +159,15 @@ int32_t  W25Q64_FileDelete(uint16_t id);                     /* 删除文件    
 int32_t  W25Q64_GetFreeSpace(void);                           /* 获取剩余空间（字节）   */
 void     W25Q64_Format(void);                                 /* 格式化（擦除全部）     */
 
+/* ---------- 流式写入接口（串口烧录用） ---------- */
+int32_t  W25Q64_StreamStart(uint16_t id, uint32_t size);
+int32_t  W25Q64_StreamFeed(const uint8_t *data, uint16_t len);
+int32_t  W25Q64_StreamEnd(void);
+uint8_t  W25Q64_StreamIsDone(void);    /* 查询是否已全部写完 */
+int32_t  W25Q64_GetFileAddr(uint16_t id, uint32_t *addr, uint32_t *size); /* 查文件地址 */
+
 /* ---------- 工具函数 ---------- */
 uint16_t W25Q64_CRC16(const uint8_t *data, uint32_t len);    /* CRC16 校验计算         */
+uint16_t W25Q64_CRC16_Update(uint16_t crc, const uint8_t *data, uint32_t len); /* 分步 CRC */
 
 #endif /* __W25Q64_H */
