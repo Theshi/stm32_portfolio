@@ -1,0 +1,11 @@
+{
+	"nodes":[
+		{"id":"f5d6105c761443ce","x":-105,"y":-90,"width":250,"height":60,"type":"text","text":"Bootloader"},
+		{"id":"2be780db922a781c","type":"text","text":"平衡车项目","x":-60,"y":100,"width":250,"height":60},
+		{"id":"1c48b7f6661a09dd","type":"text","text":"FreeRTOS+LVGL+esp8266大杂烩项目","x":-420,"y":-240,"width":250,"height":60}
+	],
+	"edges":[
+		{"id":"cee1d87b56202704","fromNode":"1c48b7f6661a09dd","fromSide":"bottom","toNode":"f5d6105c761443ce","toSide":"top"},
+		{"id":"a67036eaef1acb06","fromNode":"f5d6105c761443ce","fromSide":"right","toNode":"2be780db922a781c","toSide":"top"}
+	]
+}

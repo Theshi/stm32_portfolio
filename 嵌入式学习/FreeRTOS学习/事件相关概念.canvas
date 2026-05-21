@@ -1,0 +1,19 @@
+{
+	"nodes":[
+		{"id":"eb05bb9a0a1d292f","x":-360,"y":-120,"width":250,"height":60,"color":"5","type":"text","text":"逻辑或"},
+		{"id":"e251ab4ddd473e48","x":-360,"y":-320,"width":250,"height":100,"type":"text","text":"==独立型同步==：任务感兴趣的所有事件其中任意一个发生->唤醒"},
+		{"id":"16b3859a96c3ddef","x":-80,"y":-120,"width":250,"height":60,"color":"5","type":"text","text":"逻辑与"},
+		{"id":"31a7beda5f5f00e8","x":-80,"y":-320,"width":250,"height":103,"type":"text","text":"==关联型同步==：当任务感兴趣的所有事件全部发生的时候任务唤醒"},
+		{"id":"d72be74d63c5d7bb","x":-235,"y":40,"width":250,"height":60,"type":"text","text":"事件Event"},
+		{"id":"74ff48c895974e1e","x":-440,"y":148,"width":250,"height":60,"type":"text","text":"1vn"},
+		{"id":"ff04de778ef1fd3a","x":-66,"y":149,"width":250,"height":60,"type":"text","text":"NVN"}
+	],
+	"edges":[
+		{"id":"722a1c393e7a6023","fromNode":"eb05bb9a0a1d292f","fromSide":"top","toNode":"e251ab4ddd473e48","toSide":"bottom"},
+		{"id":"d8a87b54cb9ee09d","fromNode":"16b3859a96c3ddef","fromSide":"top","toNode":"31a7beda5f5f00e8","toSide":"bottom"},
+		{"id":"58cabae17900d87c","fromNode":"d72be74d63c5d7bb","fromSide":"top","toNode":"eb05bb9a0a1d292f","toSide":"bottom"},
+		{"id":"f0ab8e977ebc6dd4","fromNode":"d72be74d63c5d7bb","fromSide":"top","toNode":"16b3859a96c3ddef","toSide":"bottom"},
+		{"id":"15728b2f78889419","fromNode":"d72be74d63c5d7bb","fromSide":"bottom","toNode":"74ff48c895974e1e","toSide":"top"},
+		{"id":"871e5ec6f7793deb","fromNode":"d72be74d63c5d7bb","fromSide":"bottom","toNode":"ff04de778ef1fd3a","toSide":"top"}
+	]
+}

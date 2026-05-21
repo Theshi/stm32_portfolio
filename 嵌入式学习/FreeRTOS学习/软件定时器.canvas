@@ -1,0 +1,41 @@
+{
+	"nodes":[
+		{"id":"14dcdacdb700a703","type":"group","x":160,"y":420,"width":380,"height":440,"label":"表头"},
+		{"id":"b0190ab9ecbd30ee","type":"group","x":80,"y":940,"width":400,"height":400,"label":"FreeRTOS内核源码"},
+		{"id":"49b7b6cbd512b595","type":"group","x":-320,"y":420,"width":400,"height":360,"label":"表头"},
+		{"id":"64c12125f30e14c2","type":"group","x":-920,"y":940,"width":400,"height":280,"label":"用户程序调用定时器函数"},
+		{"id":"ccd53dc86d1954bb","type":"group","x":-820,"y":420,"width":400,"height":260,"label":"表头"},
+		{"id":"1e8fe604310b04b5","type":"text","text":"软件定时器","x":-420,"y":-220,"width":250,"height":60},
+		{"id":"51043925d59534d6","type":"text","text":"消息队列","x":-120,"y":-220,"width":250,"height":60},
+		{"id":"af1650c2c73a99b6","type":"text","text":"任务","x":180,"y":-220,"width":250,"height":60},
+		{"id":"247de13f122ace3c","type":"file","file":"FreeRTOS学习/软件定时器+任务通知.md","x":-420,"y":-100,"width":400,"height":400},
+		{"id":"a2b3b63d6db810f9","type":"text","text":"定时器链表示意图","x":-520,"y":320,"width":250,"height":60,"color":"2"},
+		{"id":"3de2e2d223745891","type":"text","text":"xTimeNow=0","x":-800,"y":610,"width":250,"height":60,"color":"6"},
+		{"id":"056ef120393bde77","type":"text","text":"Timer1\n\nxTicksToWait=200\n","x":-800,"y":440,"width":250,"height":84},
+		{"id":"44681c0f187cca1b","type":"text","text":"插入延时100\n","x":-620,"y":740,"width":250,"height":60},
+		{"id":"b93b1d87680deb3d","type":"text","text":"Timer2\nxTicksToWait=120","x":-300,"y":452,"width":250,"height":60},
+		{"id":"2ccdc7a6aa3c60ab","type":"text","text":"Timer1\nxTicksToWait=200","x":-300,"y":580,"width":250,"height":60},
+		{"id":"2f9b574359aec88c","type":"text","text":"xTimeNow=20","x":-300,"y":710,"width":250,"height":60,"color":"6"},
+		{"id":"025853646f5b32b7","type":"text","text":"xTimeNow=40","x":170,"y":770,"width":250,"height":60,"color":"6"},
+		{"id":"810cf01dee7959c8","type":"text","text":"插入延时50","x":-80,"y":830,"width":250,"height":60},
+		{"id":"976893613aebbf38","type":"text","text":"xTimerDelete\nxTimerStart/xTimerStartFromISR\nxTimerStop/xTimerStopFormISR\nxTimerReset/xTimerReseFromISR\nxTimerChangePeriod\nxTimerChangePeriodFromISR","x":-885,"y":980,"width":335,"height":200},
+		{"id":"a5c9191cde2b78aa","type":"text","text":"Timer command queue","x":-330,"y":1020,"width":250,"height":60},
+		{"id":"777e8a85a80883a2","type":"text","text":"Timer3\nxTicksToWait=90","x":220,"y":453,"width":250,"height":55},
+		{"id":"8e537ce51b205406","type":"text","text":"Timer1\nxTicksToWait=200","x":220,"y":653,"width":250,"height":50},
+		{"id":"a1f610f5e8adf757","type":"text","text":"void preTimerTask(...)\n{\n\tfoe(;;;){\n\t\t.......\n\t\t//度队列\n\t\txQueueReceive();\n\t\t//处理队列\n\t\t\t...}\n}\n}","x":105,"y":975,"width":324,"height":329},
+		{"id":"300083abe2c203b8","type":"text","text":"Timer2\nxTicksToWait=120","x":258,"y":553,"width":175,"height":50}
+	],
+	"edges":[
+		{"id":"d49cb08749e80f24","fromNode":"1e8fe604310b04b5","fromSide":"right","toNode":"51043925d59534d6","toSide":"left"},
+		{"id":"95136433a8f5d2cf","fromNode":"51043925d59534d6","fromSide":"left","toNode":"1e8fe604310b04b5","toSide":"right"},
+		{"id":"d1aa210aa68918b1","fromNode":"af1650c2c73a99b6","fromSide":"left","toNode":"51043925d59534d6","toSide":"right"},
+		{"id":"0e7ea47d532302eb","fromNode":"056ef120393bde77","fromSide":"top","toNode":"2ccdc7a6aa3c60ab","toSide":"left","color":"3"},
+		{"id":"b6b7b36f26bf1ec5","fromNode":"b93b1d87680deb3d","fromSide":"bottom","toNode":"2ccdc7a6aa3c60ab","toSide":"top","color":"1"},
+		{"id":"c17ff2c908cdf8f0","fromNode":"777e8a85a80883a2","fromSide":"bottom","toNode":"300083abe2c203b8","toSide":"top","color":"1"},
+		{"id":"3cd69b38011bb2f2","fromNode":"300083abe2c203b8","fromSide":"bottom","toNode":"8e537ce51b205406","toSide":"top","color":"1"},
+		{"id":"7a31007495e78a54","fromNode":"b93b1d87680deb3d","fromSide":"top","toNode":"300083abe2c203b8","toSide":"left","color":"3"},
+		{"id":"f91a4b607eea5d99","fromNode":"2ccdc7a6aa3c60ab","fromSide":"bottom","toNode":"8e537ce51b205406","toSide":"left","color":"3"},
+		{"id":"b0edae6900777823","fromNode":"64c12125f30e14c2","fromSide":"right","toNode":"a5c9191cde2b78aa","toSide":"left"},
+		{"id":"33a07316fb807d26","fromNode":"a5c9191cde2b78aa","fromSide":"right","toNode":"b0190ab9ecbd30ee","toSide":"left"}
+	]
+}
