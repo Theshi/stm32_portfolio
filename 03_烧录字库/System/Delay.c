@@ -1,7 +1,5 @@
 #include "stm32f10x.h"
-#include "SysTick.h"
-#include "FreeRTOS.h"	//FreeRTOSʹ��		  
-#include "task.h"
+#include "SysTick.h"	  
 
 uint16_t last_time_tick;//��¼��һ�ε�tick��ֵ
 /**

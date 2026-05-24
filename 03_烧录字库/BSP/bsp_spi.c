@@ -85,6 +85,17 @@ void SPI_Flash_Init(void)
     SPI_InitTypeDef  SPI_InitStruct;
     GPIO_InitTypeDef GPIO_InitStruct;
 
+    /* ---- 第2步：使能时钟 ---- */
+
+    /* 使能 SPI1 时钟 */
+    FLASH_SPI_APBxClock_FUN(FLASH_SPI_CLK, ENABLE);
+
+    /* 使能 GPIO 端口时钟（4个引脚分属 GPIOA 和 GPIOC） */
+    FLASH_SPI_CS_APBxClock_FUN(FLASH_SPI_CS_CLK
+                             | FLASH_SPI_SCK_CLK
+                             | FLASH_SPI_MISO_CLK
+                             | FLASH_SPI_MOSI_CLK, ENABLE);
+
     /* ---- 第1步：GPIO 引脚配置 ---- */
 
     /* CS 引脚 —— 普通推挽输出，手动控制 */
@@ -110,17 +121,7 @@ void SPI_Flash_Init(void)
     GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(FLASH_SPI_MOSI_PORT, &GPIO_InitStruct);
 
-    /* ---- 第2步：使能时钟 ---- */
-
-    /* 使能 SPI1 时钟 */
-    FLASH_SPI_APBxClock_FUN(FLASH_SPI_CLK, ENABLE);
-
-    /* 使能 GPIO 端口时钟（4个引脚分属 GPIOA 和 GPIOC） */
-    FLASH_SPI_CS_APBxClock_FUN(FLASH_SPI_CS_CLK
-                             | FLASH_SPI_SCK_CLK
-                             | FLASH_SPI_MISO_CLK
-                             | FLASH_SPI_MOSI_CLK, ENABLE);
-
+    
     /* CS 默认拉高（Flash 在 CS 高电平时不响应） */
     SPI_FLASH_CS_HIGH();    /* 【修复】原代码: Flash_SPI_CS_HIGH() */
 
@@ -239,9 +240,6 @@ uint32_t SPI_Flash_ReadID(void)
 
     /* 发送 JEDEC ID 命令 0x9F */
     SPI_Flash_SendByte(W25X_JedecDeviceID);    
-
-    /* ★ 多发一个空闲字节，吃掉 Flash 还未准备好的无效数据 */
-    SPI_Flash_SendByte(Dummy_Byte);
 
     /* 连续读取 3 字节 ID */
     Temp0 = SPI_Flash_SendByte(Dummy_Byte);   

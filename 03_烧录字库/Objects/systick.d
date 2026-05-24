@@ -28,14 +28,3 @@
 .\objects\systick.o: .\Library\stm32f10x_usart.h
 .\objects\systick.o: .\Library\stm32f10x_wwdg.h
 .\objects\systick.o: .\Library\misc.h
-.\objects\systick.o: .\FreeRTOS\src\FreeRTOS.h
-.\objects\systick.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stddef.h
-.\objects\systick.o: .\User\FreeRTOSConfig.h
-.\objects\systick.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdio.h
-.\objects\systick.o: .\FreeRTOS\src\projdefs.h
-.\objects\systick.o: .\FreeRTOS\src\portable.h
-.\objects\systick.o: .\FreeRTOS\src\deprecated_definitions.h
-.\objects\systick.o: .\FreeRTOS\portable\portmacro.h
-.\objects\systick.o: .\FreeRTOS\src\mpu_wrappers.h
-.\objects\systick.o: .\FreeRTOS\src\task.h
-.\objects\systick.o: .\FreeRTOS\src\list.h

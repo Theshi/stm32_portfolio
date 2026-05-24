@@ -29,17 +29,3 @@
 .\objects\main.o: .\Library\stm32f10x_wwdg.h
 .\objects\main.o: .\Library\misc.h
 .\objects\main.o: .\System\SysTick.h
-.\objects\main.o: .\FreeRTOS\src\FreeRTOS.h
-.\objects\main.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stddef.h
-.\objects\main.o: .\User\FreeRTOSConfig.h
-.\objects\main.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdio.h
-.\objects\main.o: .\FreeRTOS\src\projdefs.h
-.\objects\main.o: .\FreeRTOS\src\portable.h
-.\objects\main.o: .\FreeRTOS\src\deprecated_definitions.h
-.\objects\main.o: .\FreeRTOS\portable\portmacro.h
-.\objects\main.o: .\FreeRTOS\src\mpu_wrappers.h
-.\objects\main.o: .\FreeRTOS\src\task.h
-.\objects\main.o: .\FreeRTOS\src\list.h
-.\objects\main.o: .\BSP\bsp_usart.h
-.\objects\main.o: .\Driver\W25Q64.h
-.\objects\main.o: .\BSP\bsp_spi.h

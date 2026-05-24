@@ -19,9 +19,6 @@
 #include "stm32f10x.h"
 #include "SysTick.h"
 
-#include "FreeRTOS.h"
-#include "task.h"
-
 #include "bsp_usart.h"
 #include "W25Q64.h"
 
@@ -47,9 +44,6 @@ static StreamState_t g_State = STATE_IDLE;
 /* ========================================================================
  *  LoaderTask —— 监控下载状态，收尾时触发 StreamEnd
  * ======================================================================== */
-#define LoaderTask_STACKSIZE  256
-#define LoaderTask_PRIO       2
-TaskHandle_t LoaderTask_Handle;
 
 void LoaderTask(void *p)
 {
@@ -142,10 +136,6 @@ void SerialFlashLoader_Start(uint16_t id, uint32_t size)
 /* ========================================================================
  * StartUpTask —— 初始化 Flash + 字库 + 串口命令交互
  * ======================================================================== */
-#define StartUpTask_STACKSIZE 512
-#define StartUpTask_PRIO      1
-TaskHandle_t StartUpTask_Handle;
-
 void StartUpTask(void *p)
 {
     /* 初始化 W25Q64 文件系统 */
@@ -180,7 +170,7 @@ void StartUpTask(void *p)
     SerialFlashLoader_Start(0, 2527232);
 
     while (1) {
-        vTaskDelay(500);
+        Delay(500);
     }
 }
 
@@ -189,8 +179,6 @@ void StartUpTask(void *p)
  * ======================================================================== */
 int main(void)
 {
-    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
-
     /* 1. 初始化 USART */
     USART_Config();
     printf("\r\n======== W25Q64 字库烧录测试 ========\r\n");
@@ -201,16 +189,8 @@ int main(void)
     printf("[2/2] W25Q64 硬件初始化完毕, Flash ID = 0x%X\r\n",
            (unsigned int)W25Q64_ReadID());
     printf("========================================\r\n\r\n");
+	
+	StartUpTask()；
 
-    /* 3. 启动 FreeRTOS（只创建 2 个任务） */
-    SysTick_Init();
-    xTaskCreate(StartUpTask, "StartUpTask", StartUpTask_STACKSIZE, NULL,
-                StartUpTask_PRIO, &StartUpTask_Handle);
-    xTaskCreate(LoaderTask,  "LoaderTask",  LoaderTask_STACKSIZE,  NULL,
-                LoaderTask_PRIO,  &LoaderTask_Handle);
-    vTaskStartScheduler();
-
-    /* 调度器启动失败才会到这里 */
-    printf("[FATAL] 调度器启动失败！\r\n");
     while (1);
 }
