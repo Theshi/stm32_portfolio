@@ -59,6 +59,7 @@ typedef enum {
 /* ---- LVGL_Task 句柄前向声明（Boot_Task 需要通过它发通知） ---- */
 extern TaskHandle_t LVGL_Task_Handle;
 
+
 /* ========================================================================
  * Boot_Task —— 系统自检任务（纯逻辑，不操作 UI）
  *
@@ -107,57 +108,143 @@ void Boot_Task(void *p)
 
 /* ========================================================================
  * LVGL_Task —— UI 任务（所有 LVGL API 调用的唯一入口）
- *
- * 职责：
- *   - LVGL 初始化 + 显示屏 + 触摸屏
- *   - Boot Screen / Main Screen 的创建与切换
- *   - lv_timer_handler() 刷新循环
- *   - 接收 Boot_Task 通知，更新 UI 状态
  * ======================================================================== */
-#define LvglTask_STACKSIZE 512
+#define LvglTask_STACKSIZE 1024
 #define LvglTask_PRIO      1
 TaskHandle_t LVGL_Task_Handle;
+
+
+/* ================================================================
+ * Boot Screen 相关静态变量（在 LvglTask 中初始化，通知回调中更新）
+ * ================================================================ */
+static lv_obj_t *label_log;           /* 自检日志 label      */
+static char      boot_log[512];       /* 自检日志缓冲区       */
+static lv_obj_t *bar_boot;            /* 进度条               */
+static lv_obj_t *label_percent;       /* 进度百分比文字       */
+
+
+/* ---- BootLog_Add —— 追加一条自检日志到 Boot Screen ---- */
+static void BootLog_Add(const char *msg)
+{
+    strcat(boot_log, msg);
+    strcat(boot_log, "\n");
+    lv_label_set_text(label_log, boot_log);
+}
+
+
+/* ---- BootProgress_Set —— 更新进度条 + 百分比文字 ---- */
+static void BootProgress_Set(uint8_t percent)
+{
+    lv_bar_set_value(bar_boot, percent, LV_ANIM_ON);
+    lv_label_set_text_fmt(label_percent, "%d%%", percent);
+}
+
+
+/* ---- Boot_UI_Create —— 创建 Boot Screen（自检画面） ---- *
+ *
+ *  boot_screen
+ *  ├── label_Zen      "ZenStones"  logo
+ *  ├── label_load     "BOOTing ..."
+ *  ├── bar_boot       进度条 0~100%
+ *  ├── label_percent  "0%" / "25%" / ... / "100%"
+ *  └── label_log      自检日志滚动
+ */
+static lv_obj_t *Boot_UI_Create(void)
+{
+    lv_obj_t *scr = lv_obj_create(NULL);
+    lv_obj_set_style_bg_color(scr, lv_color_white(), LV_PART_MAIN);
+
+    /* ---- ZenStones Logo ---- */
+    lv_obj_t *label_Zen = lv_label_create(scr);
+    lv_label_set_text(label_Zen, "ZenStones");
+    lv_obj_set_style_text_font(label_Zen, &lv_font_montserrat_48, LV_PART_MAIN);
+    lv_obj_set_pos(label_Zen, 80, 30);
+
+    /* ---- BOOTing 提示 ---- */
+    lv_obj_t *label_load = lv_label_create(scr);
+    lv_label_set_text(label_load, "BOOTing ...");
+    lv_obj_set_style_text_font(label_load, &my_font_SCH_16, LV_PART_MAIN);
+    lv_obj_set_pos(label_load, 27, 97);
+
+    /* ---- 进度条 ---- */
+    bar_boot = lv_bar_create(scr);
+    lv_obj_set_size(bar_boot, 200, 15);
+    lv_obj_set_pos(bar_boot, 27, 117);
+    lv_obj_set_style_bg_color(bar_boot, lv_color_black(), LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(bar_boot,
+                              lv_palette_main(LV_PALETTE_BLUE),
+                              LV_STATE_DEFAULT);
+    lv_bar_set_mode(bar_boot, LV_BAR_MODE_NORMAL);
+    lv_bar_set_range(bar_boot, 0, 100);
+    lv_obj_set_style_anim_time(bar_boot, 500, LV_STATE_DEFAULT);
+    lv_bar_set_value(bar_boot, 0, LV_ANIM_OFF);
+
+    /* ---- 进度百分比 ---- */
+    label_percent = lv_label_create(scr);
+    lv_label_set_text(label_percent, "0%");
+    lv_obj_set_style_text_font(label_percent, &my_font_SCH_16, LV_PART_MAIN);
+    lv_obj_set_pos(label_percent, 230, 117);
+
+    /* ---- 自检日志区域 ---- */
+    label_log = lv_label_create(scr);
+    lv_obj_set_style_text_font(label_log, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_set_pos(label_log, 27, 150);
+
+    /* 初始化日志缓冲区 */
+    memset(boot_log, 0, sizeof(boot_log));
+
+    return scr;
+}
+
 
 /* ---- 前向声明 ---- */
 void LVGL_CreateMainScreen(lv_obj_t *screen);
 
+
+/* ---- Boot_Finish —— 自检完成，切换到主界面 ---- */
+static void Boot_Finish(lv_obj_t *boot_screen, lv_obj_t *main_screen)
+{
+    /* 填充 Main Screen 内容 */
+    LVGL_CreateMainScreen(main_screen);
+
+    /* 带淡入动画切屏 */
+    lv_scr_load_anim(main_screen,
+                     LV_SCR_LOAD_ANIM_FADE_ON,
+                     500,
+                     0,
+                     false);
+
+    /* 删除 Boot Screen，释放内存 */
+    lv_obj_del(boot_screen);
+    printf("UI: 自检完成, 切换到主界面\n");
+}
+
+
+/* ================================================================
+ * LvglTask 主函数
+ * ================================================================ */
 void LvglTask(void *p)
 {
+    uint32_t notify_state;
+
     /* ---- 步骤1: 初始化 LVGL + 显示屏 + 触摸 ---- */
     lv_init();
     lv_port_disp_init();
     lv_port_indev_init();
 
-    /* ================================================================
-     * 步骤2: 创建 Boot Screen（自检画面）
-     *
-     *  boot_screen
-     *  ├── label_logo    （预留）
-     *  ├── label_status  （自检状态文字）
-     *  └── progress_bar  （预留）
-     * ================================================================ */
-    lv_obj_t *boot_screen = lv_obj_create(NULL);
-    lv_obj_set_style_bg_color(boot_screen, lv_color_hex(0xFFFFFF), LV_STATE_DEFAULT);
-
-    lv_obj_t *label_status = lv_label_create(boot_screen);
-    lv_obj_set_style_text_color(label_status, lv_color_hex(0x000000), LV_STATE_DEFAULT);
-    lv_label_set_text(label_status, "系统自检中...");
-    lv_obj_center(label_status);
-
-    /* 加载 Boot Screen */
+    /* ---- 步骤2: 创建 Boot Screen 并显示 ---- */
+    lv_obj_t *boot_screen = Boot_UI_Create();
     lv_scr_load(boot_screen);
 
-    /* ================================================================
-     * 步骤3: 预创建 Main Screen（主界面，等 BOOT_DONE 后切换）
-     * ================================================================ */
+    /* ---- 步骤3: 预创建 Main Screen（等 BOOT_DONE 后填充+切换） ---- */
     lv_obj_t *main_screen = lv_obj_create(NULL);
-    // Main Screen 的内容在收到 BOOT_DONE 后由 LVGL_CreateMainScreen() 填充
 
     /* ================================================================
      * 步骤4: 主循环 —— 刷新 LVGL + 接收自检状态通知
+     *
+     *   Boot_Task 完成每个自检步骤后发送通知，
+     *   此处根据状态值更新 Boot Screen 的日志和进度条。
      * ================================================================ */
-    uint32_t notify_state;
-
     while (1)
     {
         lv_timer_handler();
@@ -168,33 +255,29 @@ void LvglTask(void *p)
             switch (notify_state)
             {
                 case BOOT_START:
-                    lv_label_set_text(label_status, "系统自检中...");
+                    BootLog_Add("[BOOT] 开始自检...");
+                    BootProgress_Set(0);
                     break;
 
                 case BOOT_W25Q64_OK:
-                    lv_label_set_text(label_status, "W25Q64 字库 OK");
-                    printf("UI: W25Q64 字库就绪\n");
+                    BootLog_Add("[OK] W25Q64");
+                    BootProgress_Set(25);
                     break;
 
                 case BOOT_ESP_OK:
-                    lv_label_set_text(label_status, "ESP8266 OK");
-                    printf("UI: ESP8266 就绪\n");
+                    BootLog_Add("[OK] ESP8266");
+                    BootProgress_Set(50);
                     break;
 
                 case BOOT_RTC_OK:
-                    lv_label_set_text(label_status, "RTC OK");
-                    printf("UI: RTC 就绪\n");
+                    BootLog_Add("[OK] RTC");
+                    BootProgress_Set(75);
                     break;
 
                 case BOOT_DONE:
-                    /* 填充 Main Screen 内容并切换 */
-                    LVGL_CreateMainScreen(main_screen);
-                    lv_scr_load_anim(main_screen,
-                                     LV_SCR_LOAD_ANIM_FADE_ON,
-                                     500,
-                                     0,
-                                     false);
-                    printf("UI: 自检完成, 切换到主界面\n");
+                    BootLog_Add("[OK] 自检完成");
+                    BootProgress_Set(100);
+                    Boot_Finish(boot_screen, main_screen);
                     break;
 
                 default:
@@ -226,51 +309,73 @@ void StartUpTask(void *p)
 /* ========================================================================
  * LVGL_CreateMainScreen —— 构建 Main Screen 的 UI 元素
  *
- * 在收到 BOOT_DONE 后调用，将所有 UI 放在 main_screen 上
+ *  main_screen
+ *  ├── Time_Label       时间 "12:00"
+ *  ├── Date_Label       日期 "2024-06-01"
+ *  ├── separator        分割线
+ *  ├── Temp_Label       "Room-Temp"
+ *  ├── Outdoor_Label    "Outdoor"
+ *  ├── img_github       GitHub Logo
+ *  ├── img_wifi         WIFI  Logo
+ *  ├── img_temp         TEMP  Logo
+ *  └── img_lvgl         LVGL  Logo
+ *
+ * 【后续集成】时间/日期文字改为变量动态更新
  * ======================================================================== */
 void LVGL_CreateMainScreen(lv_obj_t *screen)
 {
     /* 设置背景颜色 */
-    lv_obj_set_style_bg_color(screen, lv_color_hex(0xFFFFFF), LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(screen, lv_color_white(), LV_PART_MAIN);
 
-    /* 屏幕正中央显示"西安" */
-    lv_obj_t *label_xian = lv_label_create(screen);
-    lv_obj_set_style_text_font(label_xian, &my_font_SCH_16, LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(label_xian, lv_color_hex(0x000000), LV_STATE_DEFAULT);
-    lv_label_set_text(label_xian, "西安");
-    lv_obj_center(label_xian);
+    /* ---- 时间显示 "12:00" （后续用 RTC 数据替换） ---- */
+    lv_obj_t *Time_Label = lv_label_create(screen);
+    lv_label_set_text(Time_Label, "12:00");
+    lv_obj_set_style_text_font(Time_Label, &lv_font_montserrat_48, LV_PART_MAIN);
+    lv_obj_set_pos(Time_Label, 80, 50);
 
-    /* 创建 GitHub 图标 */
-    lv_obj_t *img_GitHub = lv_img_create(screen);
-    lv_img_set_src(img_GitHub, &GitHub_Logo);
-    lv_obj_set_pos(img_GitHub, 265, 213);
-    lv_obj_update_layout(img_GitHub);
+    /* ---- 日期显示 "2024-06-01" （后续用 RTC 数据替换） ---- */
+    lv_obj_t *Date_Label = lv_label_create(screen);
+    lv_label_set_text(Date_Label, "2024-06-01");
+    lv_obj_set_style_text_font(Date_Label, &my_font_SCH_16, LV_PART_MAIN);
+    lv_obj_set_pos(Date_Label, 100, 100);
 
-    /* 创建 WIFI 图标 */
-    lv_obj_t *img_WIFI = lv_img_create(screen);
-    lv_img_set_src(img_WIFI, &WIFI_Logo);
-    lv_obj_set_pos(img_WIFI, 142, 10);
-    lv_obj_update_layout(img_WIFI);
+    /* ---- 分割线 ---- */
+    lv_obj_t *separator = lv_obj_create(screen);
+    lv_obj_set_size(separator, 320, 2);
+    lv_obj_set_pos(separator, 0, 136);
+    lv_obj_set_style_bg_color(separator, lv_color_black(), LV_PART_MAIN);
 
-    /* 创建 LVGL Logo */
-    lv_obj_t *img_LVGL = lv_img_create(screen);
-    lv_img_set_src(img_LVGL, &LVGL_Logo);
-    lv_obj_set_pos(img_LVGL, 10, 10);
-    lv_obj_set_style_bg_opa(img_LVGL, LV_OPA_0, LV_STATE_DEFAULT);
-    lv_obj_update_layout(img_LVGL);
+    /* ---- 室内温度 "Room-Temp" （后续用传感器数据替换） ---- */
+    lv_obj_t *Temp_Label = lv_label_create(screen);
+    lv_label_set_text(Temp_Label, "Room-Temp");
+    lv_obj_set_style_text_font(Temp_Label, &my_font_SCH_16, LV_PART_MAIN);
+    lv_obj_set_pos(Temp_Label, 30, 140);
 
-    /* 创建 TEMP 温度图标 */
-    lv_obj_t *img_TEMP = lv_img_create(screen);
-    lv_img_set_src(img_TEMP, &TEMP_Logo);
-    lv_obj_set_pos(img_TEMP, 189, 190);
-    lv_obj_update_layout(img_TEMP);
+    /* ---- 室外温度 "Outdoor" （后续用天气API数据替换） ---- */
+    lv_obj_t *Outdoor_Label = lv_label_create(screen);
+    lv_label_set_text(Outdoor_Label, "Outdoor");
+    lv_obj_set_style_text_font(Outdoor_Label, &my_font_SCH_16, LV_PART_MAIN);
+    lv_obj_set_pos(Outdoor_Label, 180, 140);
 
-    /* 创建分割线 */
-    lv_obj_t *line = lv_line_create(screen);
-    static lv_point_t line_points[] = { {0, 136}, {320, 136} };
-    lv_line_set_points(line, line_points, 2);
-    lv_obj_set_style_line_color(line, lv_color_hex(0x000000), 0);
-    lv_obj_set_style_line_width(line, 3, 0);
+    /* ---- GitHub Logo ---- */
+    lv_obj_t *img_github = lv_img_create(screen);
+    lv_img_set_src(img_github, &GitHub_Logo);
+    lv_obj_set_pos(img_github, 270, 220);
+
+    /* ---- WIFI Logo ---- */
+    lv_obj_t *img_wifi = lv_img_create(screen);
+    lv_img_set_src(img_wifi, &WIFI_Logo);
+    lv_obj_set_pos(img_wifi, 150, 10);
+
+    /* ---- TEMP Logo ---- */
+    lv_obj_t *img_temp = lv_img_create(screen);
+    lv_img_set_src(img_temp, &TEMP_Logo);
+    lv_obj_set_pos(img_temp, 250, 150);
+
+    /* ---- LVGL Logo ---- */
+    lv_obj_t *img_lvgl = lv_img_create(screen);
+    lv_img_set_src(img_lvgl, &LVGL_Logo);
+    lv_obj_set_pos(img_lvgl, 10, 10);
 }
 
 
