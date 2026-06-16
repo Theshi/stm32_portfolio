@@ -1,0 +1,6 @@
+--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I .\Start -I .\User -I .\Library -I .\System -I .\FreeRTOS\portable -I .\FreeRTOS\src -I .\Hardware -I .\Task -I .\Hardware\Mpu6050 -I .\BSP -I .\LVGL -I .\LVGL\port -I .\LVGL\src -I .\UI -I .\UI\IMG -I .\Driver -I .\UI\Font_SCh_16 --no-multibyte-chars
+-I.\RTE\_Target_1
+-ID:\Qianrushi\ARM\PACK\Keil\STM32F1xx_DFP\2.2.0\Device\Include
+-ID:\Qianrushi\ARM\CMSIS\Include
+-D__UVISION_VERSION="524" -DSTM32F10X_HD -DUSE_STDPERIPH_DRIVER
+-o .\objects\ui_wifi.o --omf_browse .\objects\ui_wifi.crf --depend .\objects\ui_wifi.d "UI\UI_Wifi.c"

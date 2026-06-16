@@ -2477,9 +2477,29 @@
           <GroupName>UI</GroupName>
           <Files>
             <File>
-              <FileName>GitHub.c</FileName>
+              <FileName>UI_API.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\UI\UI_API.h</FilePath>
+            </File>
+            <File>
+              <FileName>UI_Task.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\UI\IMG\GitHub.c</FilePath>
+              <FilePath>.\UI\UI_Task.c</FilePath>
+            </File>
+            <File>
+              <FileName>UI_Main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\UI\UI_Main.c</FilePath>
+            </File>
+            <File>
+              <FileName>UI_Boot.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\UI\UI_Boot.c</FilePath>
+            </File>
+            <File>
+              <FileName>UI_Wifi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\UI\UI_Wifi.c</FilePath>
             </File>
             <File>
               <FileName>LVG_Logo.c</FileName>
@@ -2500,6 +2520,11 @@
               <FileName>my_font_SCH_16.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\UI\Font_SCh_16\my_font_SCH_16.c</FilePath>
+            </File>
+            <File>
+              <FileName>GitHub.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\UI\IMG\GitHub.c</FilePath>
             </File>
           </Files>
         </Group>
