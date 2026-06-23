@@ -4,132 +4,282 @@
   * @author  fire
   * @version V1.0
   * @date    2013-xx-xx
-  * @brief   ´®¿ÚÖĞ¶Ï½ÓÊÕ²âÊÔ
+  * @brief   ä¸²å£ä¸­æ–­æ¥æ”¶æµ‹è¯•
   ******************************************************************************
   * @attention
   *
-  * ÊµÑéÆ½Ì¨:Ò°»ğ F103-Ö¸ÄÏÕß STM32 ¿ª·¢°å 
-  * ÂÛÌ³    :http://www.firebbs.cn
-  * ÌÔ±¦    :https://fire-stm32.taobao.com
+  * å®éªŒå¹³å°:é‡ç« F103-æŒ‡å—è€… STM32 å¼€å‘æ¿
+  * è®ºå›    :http://www.firebbs.cn
+  * æ·˜å®    :https://fire-stm32.taobao.com
   *
   ******************************************************************************
-  */ 
- 
- 
+  */
+
+
 #include "stm32f10x.h"
 #include "bsp_usart.h"
 #include "bsp_esp8266.h"
-#include "core_delay.h" 
+#include "core_delay.h"
 
-/**
-  * @brief  Ö÷º¯Êı
-  * @param  ÎŞ
-  * @retval ÎŞ
-  */
-int main(void)
-{	
-  /*³õÊ¼»¯USART ÅäÖÃÄ£Ê½Îª 115200 8-N-1£¬ÖĞ¶Ï½ÓÊÕ*/
-  USART_Config();
-	ESP8266_Init();
-  
-	printf("»¶Ó­Ê¹ÓÃÒ°»ğSTM32¿ª·¢°å\n\n");
-	printf("ÕâÊÇÒ»¸öESP8266ATÖ¸Áî²âÊÔÊµÑé\n\n");
-	printf("ÇëÊ¹ÓÃ´®¿Úµ÷ÊÔÖúÊÖ·¢ËÍ\"AT+»»ĞĞ»Ø³µ\"²âÊÔESP8266ÊÇ·ñ×¼±¸ºÃ\n\n");
-	printf("¸ü¶àATÖ¸ÁîÇë²Î¿¼Ä£¿é×ÊÁÏ\n\n");
-	printf("ÒÔÏÂÊÇESP8266ÉÏµç³õÊ¼»¯´òÓ¡µÄĞÅÏ¢\n\n");
-  
-  while(1)
-	{	
-		if(strUSART_Fram_Record .InfBit .FramFinishFlag == 1)  //Èç¹û½ÓÊÕµ½ÁË´®¿Úµ÷ÊÔÖúÊÖµÄÊı¾İ
-		{
-			strUSART_Fram_Record .Data_RX_BUF[strUSART_Fram_Record .InfBit .FramLength] = '\0';
-			Usart_SendString(macESP8266_USARTx ,strUSART_Fram_Record .Data_RX_BUF);      //Êı¾İ´Ó´®¿Úµ÷ÊÔÖúÊÖ×ª·¢µ½ESP8266
-			strUSART_Fram_Record .InfBit .FramLength = 0;                                //½ÓÊÕÊı¾İ³¤¶ÈÖÃÁã
-			strUSART_Fram_Record .InfBit .FramFinishFlag = 0;                            //½ÓÊÕ±êÖ¾ÖÃÁã
-	  }
-		if(strEsp8266_Fram_Record .InfBit .FramFinishFlag)                             //Èç¹û½ÓÊÕµ½ÁËESP8266µÄÊı¾İ
-		{                                                      
-			 strEsp8266_Fram_Record .Data_RX_BUF[strEsp8266_Fram_Record .InfBit .FramLength] = '\0';
-			 Usart_SendString(DEBUG_USARTx ,strEsp8266_Fram_Record .Data_RX_BUF);        //Êı¾İ´ÓESP8266×ª·¢µ½´®¿Úµ÷ÊÔÖúÊÖ
-			 strEsp8266_Fram_Record .InfBit .FramLength = 0;                             //½ÓÊÕÊı¾İ³¤¶ÈÖÃÁã
-			 strEsp8266_Fram_Record.InfBit.FramFinishFlag = 0;                           //½ÓÊÕ±êÖ¾ÖÃÁã
-		}
-  }	
-}	
-/*********************************************END OF FILE**********************/
-/*HTTP×´Ì¬»ú*/
-
+/* HTTPçŠ¶æ€æœº */
 typedef enum
 {
-  HTTP_STATE_IDLE ,//¿ÕÏĞ×´Ì¬
-  HTTP_SATEP_CIPSTART,//ÕıÔÚÁ´½ÓTCP·şÎñÆ÷
-  HTTP_STATE_WAIT_CONNECT,//µÈ´ıTCP·şÎñÆ÷Á¬½Ó³É¹¦(OK/ALREADY CONNECTED)
-  HTTP_STATE_CIPSEND, //ÕıÔÚ·¢ËÍÊı¾İ
-  HTTP_STATE_WAIT_PROMPT,//µÈ´ı·¢ËÍÊı¾İµÄÌáÊ¾·û(>)
-  HTTP_STATE_WAIT_SEND_OK,//µÈ´ı·¢ËÍÊı¾İ³É¹¦µÄ»Ø¸´(OK/SEND OK)
-  HTTP_STATE_SEND_HTTP,       // ·¢ËÍ HTTP GET ÇëÇó
-  HTTP_STATE_WAIT_RESPONSE,   // µÈ´ı·şÎñÆ÷ÏìÓ¦Êı¾İ
-  HTTP_STATE_DONE,            // Íê³É
-  HTTP_STATE_ERROR            // ³ö´í
+  HTTP_STATE_IDLE,              // ç©ºé—²çŠ¶æ€
+  HTTP_SATEP_CIPSTART,          // æ­¥éª¤1ï¼šå‘é€TCPè¿æ¥å‘½ä»¤
+  HTTP_STATE_WAIT_CONNECT,      // ç­‰å¾…TCPè¿æ¥åº”ç­” (OK/ALREADY CONNECT)
+  HTTP_STATE_CIPSEND,           // æ­¥éª¤2ï¼šå‘é€CIPSENDå‘½ä»¤
+  HTTP_STATE_WAIT_PROMPT,       // ç­‰å¾…å‘é€æç¤ºç¬¦ ">"
+  HTTP_STATE_SEND_HTTP,         // æ­¥éª¤3ï¼šå‘é€HTTP GETè¯·æ±‚
+  HTTP_STATE_WAIT_RESPONSE,     // ç­‰å¾…æœåŠ¡å™¨å“åº”æ•°æ®ï¼Œæ£€æµ‹CLOSEDç»“æŸ
+  HTTP_STATE_DONE,              // HTTPè¯·æ±‚å®Œæˆ
+  HTTP_STATE_ERROR              // å‡ºé”™å¤„ç†
 } HTTP_StateTypeDef;
 
 HTTP_StateTypeDef http_state = HTTP_STATE_IDLE;
-uint8_t Http_Time_out =0;//HTTP×´Ì¬»úµÄ³¬Ê±¼ÆÊıÆ÷
+uint8_t Http_Time_out = 0;      // çŠ¶æ€æœºè¶…æ—¶è®¡æ•°å™¨ï¼Œæ¯100ms+1
 
-/*ÔÚmain()µÄÖ÷Ñ­»·ÖĞµ÷ÓÃ×´Ì¬»ú*/
+/* HTTP GET è¯·æ±‚å†…å®¹ï¼ˆä»¥ \r\n\r\n ç»“å°¾ï¼‰ */
+/* HTTPæµ‹è¯•è¯·æ±‚ â€” httpbin.org/get è¿”å›ä½ çš„IPç­‰JSONæ•°æ® */
+static const char http_request[] =
+  "GET /get HTTP/1.1\r\n"
+  "Host: httpbin.org\r\n"
+  "Connection: close\r\n"
+  "\r\n";
+
+/**
+  * @brief  HTTPè¯·æ±‚éé˜»å¡çŠ¶æ€æœºï¼Œåœ¨main()çš„whileå¾ªç¯ä¸­è°ƒç”¨
+  *         é€šè¿‡DEBUGä¸²å£(USART1)è¾“å…¥ "HTTP" å­—ç¬¦ä¸²æ¥è§¦å‘
+  * @param  æ— 
+  * @retval æ— 
+  */
 void HTTP_Request_Status_Machine(void)
 {
   switch(http_state)
   {
+  /* ---------------- ç©ºé—²çŠ¶æ€ ---------------- */
     case HTTP_STATE_IDLE:
-      // ¿ÕÏĞ×´Ì¬£¬¿ÉÒÔ¸ù¾İĞèÒª´¥·¢ HTTP ÇëÇó
+      // ç­‰å¾…å¤–éƒ¨è®¾ç½® http_state = HTTP_SATEP_CIPSTART æ¥è§¦å‘
       break;
-      
+
+  /* ---------- æ­¥éª¤1ï¼šå‘é€TCPè¿æ¥å‘½ä»¤ ---------- */
     case HTTP_SATEP_CIPSTART:
-      ESP8266_Cmd("AT+CIPSTART=\"TCP\",\"worldtimeapi.org\",80",
-                        "OK", "ALREADY CONNECTED", 5000);// ·¢ËÍ AT+CIPSTART ÃüÁîÁ¬½Ó TCP ·şÎñÆ÷
-      // Usart_SendString(macESP8266_USARTx, 
-      //           "AT+CIPSTART=\"TCP\",\"worldtimeapi.org\",80\r\n");//Õâ±ßÁ½¸ö·¢ËÍµÄ·¢ËÍÊÇ²»ÊÇÖØ¸´ÁË
-      http_state= HTTP_STATE_WAIT_CONNECT;
-      Http_Time_out = 0;                  
+      // æ¸…ç©ºæ¥æ”¶ç¼“å†²åŒºï¼Œå‘é€ AT+CIPSTART æŒ‡ä»¤ï¼ˆéé˜»å¡æ–¹å¼ï¼‰
+      strEsp8266_Fram_Record .InfBit .FramLength = 0;
+      strEsp8266_Fram_Record .InfBit .FramFinishFlag = 0;
+      Usart_SendString(macESP8266_USARTx,
+          "AT+CIPSTART=\"TCP\",\"httpbin.org\",80\r\n");
+      http_state = HTTP_STATE_WAIT_CONNECT;
+      Http_Time_out = 0;
       break;
-      
+
+  /* -------- ç­‰å¾…TCPè¿æ¥åº”ç­”(OK/ERROR) -------- */
     case HTTP_STATE_WAIT_CONNECT:
-      if(strEsp8266_Fram_Record.InfBit.FramFinishFlag)// µÈ´ı·şÎñÆ÷Á¬½Ó³É¹¦µÄ»Ø¸´
+      if(strEsp8266_Fram_Record .InfBit .FramFinishFlag)
       {
-        
+        // æ”¶åˆ°åº”ç­”å¸§ï¼Œè¡¥ä¸Šå­—ç¬¦ä¸²ç»“å°¾
+        strEsp8266_Fram_Record .Data_RX_BUF[
+            strEsp8266_Fram_Record .InfBit .FramLength] = '\0';
+
+        if(strstr(strEsp8266_Fram_Record .Data_RX_BUF, "OK") ||
+           strstr(strEsp8266_Fram_Record .Data_RX_BUF, "ALREADY CONNECT"))
+        {
+          printf("[HTTP] TCP Connect OK\r\n");
+          http_state = HTTP_STATE_CIPSEND;
+        }
+        else if(strstr(strEsp8266_Fram_Record .Data_RX_BUF, "ERROR"))
+        {
+          printf("[HTTP] TCP Connect FAIL\r\n");
+          http_state = HTTP_STATE_ERROR;
+        }
+        // åŒæ—¶æ‰“å°åˆ°DEBUGä¸²å£ä¾›è§‚å¯Ÿ
+        printf("%s", strEsp8266_Fram_Record .Data_RX_BUF);
+
+        strEsp8266_Fram_Record .InfBit .FramLength = 0;
+        strEsp8266_Fram_Record .InfBit .FramFinishFlag = 0;
+      }
+      else
+      {
+        // æœªæ”¶åˆ°åº”ç­”ï¼Œå»¶æ—¶100mså†æ£€æŸ¥
+        Delay_ms(100);
+        Http_Time_out++;
+        if(Http_Time_out > 60)   // 60*100ms = 6s timeout
+        {
+          printf("[HTTP] TCP Connect Timeout\r\n");
+          http_state = HTTP_STATE_ERROR;
+        }
       }
       break;
-      
+
+  /* ---------- æ­¥éª¤2ï¼šå‘é€CIPSEND ---------- */
     case HTTP_STATE_CIPSEND:
-      // ·¢ËÍ AT+CIPSEND ÃüÁî×¼±¸·¢ËÍÊı¾İ
+      {
+        char cCmdBuf[30];
+        // æ¸…ç©ºæ¥æ”¶ç¼“å†²åŒº
+        strEsp8266_Fram_Record .InfBit .FramLength = 0;
+        strEsp8266_Fram_Record .InfBit .FramFinishFlag = 0;
+        // æ‹¼æ¥ AT+CIPSEND=<HTTPæŠ¥æ–‡é•¿åº¦>
+        sprintf(cCmdBuf, "AT+CIPSEND=%d\r\n",
+                (int)strlen(http_request)); // strlen=70
+        Usart_SendString(macESP8266_USARTx, cCmdBuf);
+        http_state = HTTP_STATE_WAIT_PROMPT;
+        Http_Time_out = 0;
+      }
       break;
-      
+
+  /* -------- ç­‰å¾…å‘é€æç¤ºç¬¦ ">" -------- */
     case HTTP_STATE_WAIT_PROMPT:
-      // µÈ´ı·¢ËÍÊı¾İµÄÌáÊ¾·û (>)
+      if(strEsp8266_Fram_Record .InfBit .FramFinishFlag)
+      {
+        strEsp8266_Fram_Record .Data_RX_BUF[
+            strEsp8266_Fram_Record .InfBit .FramLength] = '\0';
+
+        if(strstr(strEsp8266_Fram_Record .Data_RX_BUF, ">"))
+        {
+          // æ”¶åˆ° ">" æç¤ºç¬¦ï¼Œå¯ä»¥å‘é€HTTPæŠ¥æ–‡äº†
+          http_state = HTTP_STATE_SEND_HTTP;
+        }
+        else if(strstr(strEsp8266_Fram_Record .Data_RX_BUF, "ERROR"))
+        {
+          printf("[HTTP] CIPSEND Error\r\n");
+          http_state = HTTP_STATE_ERROR;
+        }
+        printf("%s", strEsp8266_Fram_Record .Data_RX_BUF);
+
+        strEsp8266_Fram_Record .InfBit .FramLength = 0;
+        strEsp8266_Fram_Record .InfBit .FramFinishFlag = 0;
+      }
+      else
+      {
+        Delay_ms(100);
+        Http_Time_out++;
+        if(Http_Time_out > 30)   // 30*100ms = 3s timeout
+        {
+          printf("[HTTP] Wait \">\" Timeout\r\n");
+          http_state = HTTP_STATE_ERROR;
+        }
+      }
       break;
-      
-    case HTTP_STATE_WAIT_SEND_OK:
-      // µÈ´ı·¢ËÍÊı¾İ³É¹¦µÄ»Ø¸´ (OK/SEND OK)
-      break;
-      
+
+  /* ---------- æ­¥éª¤3ï¼šå‘é€HTTP GETè¯·æ±‚ ---------- */
     case HTTP_STATE_SEND_HTTP:
-      // ·¢ËÍ HTTP GET ÇëÇó
+      // æ”¶åˆ° ">" åå‘é€HTTP GETè¯·æ±‚
+      Usart_SendString(macESP8266_USARTx,
+          (char *)http_request);
+      http_state = HTTP_STATE_WAIT_RESPONSE;
+      Http_Time_out = 0;
+      printf("[HTTP] GET Request Sent\r\n");
       break;
-      
+
+  /* ---- ç­‰å¾…æœåŠ¡å™¨å“åº” + æ£€æµ‹CLOSEDç»“æŸ ---- */
     case HTTP_STATE_WAIT_RESPONSE:
-      // µÈ´ı·şÎñÆ÷ÏìÓ¦Êı¾İ
+      if(strEsp8266_Fram_Record .InfBit .FramFinishFlag)
+      {
+        strEsp8266_Fram_Record .Data_RX_BUF[
+            strEsp8266_Fram_Record .InfBit .FramLength] = '\0';
+
+        // å°†ESP8266è¿”å›çš„å“åº”æ•°æ®è½¬å‘åˆ°DEBUGä¸²å£è§‚å¯Ÿ
+        printf("%s", strEsp8266_Fram_Record .Data_RX_BUF);
+
+        // æœåŠ¡å™¨å“åº”å®Œæˆåä¸»åŠ¨å…³é—­TCPè¿æ¥ï¼ŒESP8266ä¼šè¾“å‡º CLOSED
+        if(strstr(strEsp8266_Fram_Record .Data_RX_BUF,
+                  "CLOSED"))
+        {
+          printf("\r\n--- HTTP Done ---\r\n");
+          http_state = HTTP_STATE_DONE;
+        }
+
+        strEsp8266_Fram_Record .InfBit .FramLength = 0;
+        strEsp8266_Fram_Record .InfBit .FramFinishFlag = 0;
+        Http_Time_out = 0;   // æ¯æ¬¡æ”¶åˆ°æ•°æ®éƒ½é‡ç½®è¶…æ—¶
+      }
+      else
+      {
+        Delay_ms(100);
+        Http_Time_out++;
+        if(Http_Time_out > 100)  // 100*100ms = 10s timeout
+        {
+          printf("[HTTP] Response Timeout\r\n");
+          http_state = HTTP_STATE_ERROR;
+        }
+      }
       break;
-      
+
+  /* -------------- å®Œæˆã€å‡ºé”™ -------------- */
     case HTTP_STATE_DONE:
-      // ÇëÇóÍê³É£¬¿ÉÒÔ´¦ÀíÏìÓ¦Êı¾İ»òÖØÖÃ×´Ì¬»ú
+      printf("[HTTP] Request SUCCESS\r\n");
+      http_state = HTTP_STATE_IDLE;
       break;
-      
+
     case HTTP_STATE_ERROR:
-      // ´¦Àí´íÎóÇé¿ö£¬¿ÉÒÔÖØÖÃ×´Ì¬»ú»ò¼ÇÂ¼´íÎóĞÅÏ¢
+      printf("[HTTP] Request FAILED\r\n");
+      http_state = HTTP_STATE_IDLE;
       break;
-      
+
     default:
       break;
   }
 }
+
+
+/**
+  * @brief  ä¸»å‡½æ•°
+  * @param  æ— 
+  * @retval æ— 
+  */
+int main(void)
+{
+  /*åˆå§‹åŒ–USART é…ç½®æ¨¡å¼ä¸º 115200 8-N-1ï¼Œä¸­æ–­æ¥æ”¶*/
+  USART_Config();
+	CPU_TS_TmrInit();       // åˆå§‹åŒ–DWTæ—¶é’Ÿè®¡æ•°å™¨ï¼ŒDelay_msä¾èµ–æ­¤å‡½æ•°ï¼
+	ESP8266_Init();
+
+	printf("\r\n--- ESP8266 AT Test ---\r\n");
+	printf("Type AT commands manually to test ESP8266\r\n");
+	printf("Type \"HTTP\" to trigger HTTP request state machine\r\n\r\n");
+
+  while(1)
+	{
+		/* ----- å¤„ç†è°ƒè¯•ä¸²å£(USART1)æ”¶åˆ°çš„æ•°æ® ----- */
+		if(strUSART_Fram_Record .InfBit .FramFinishFlag == 1)
+		{
+			strUSART_Fram_Record .Data_RX_BUF[
+			    strUSART_Fram_Record .InfBit .FramLength] = '\0';
+
+			/* æ£€æµ‹æ˜¯å¦ä¸ºHTTPè§¦å‘å‘½ä»¤ */
+			if(strstr(strUSART_Fram_Record .Data_RX_BUF, "HTTP"))
+			{
+				http_state = HTTP_SATEP_CIPSTART;
+				printf("[HTTP] State Machine Start\r\n");
+			}
+			else
+			{
+				/* æ­£å¸¸è½¬å‘ï¼šè°ƒè¯•ä¸²å£æ•°æ® â†’ ESP8266 */
+				Usart_SendString(macESP8266_USARTx,
+				    strUSART_Fram_Record .Data_RX_BUF);
+			}
+
+			strUSART_Fram_Record .InfBit .FramLength = 0;
+			strUSART_Fram_Record .InfBit .FramFinishFlag = 0;
+	  }
+
+		/* ----- HTTPçŠ¶æ€æœºè¿è¡Œæ—¶ï¼Œæ¥ç®¡ESP8266è¿”å›æ•°æ® ----- */
+		if(http_state != HTTP_STATE_IDLE)
+		{
+			HTTP_Request_Status_Machine();
+		}
+		else
+		{
+			/* ç©ºé—²æ—¶ï¼šæ­£å¸¸é€ä¼  ESP8266æ•°æ® â†’ è°ƒè¯•ä¸²å£ */
+			if(strEsp8266_Fram_Record .InfBit .FramFinishFlag)
+			{
+				strEsp8266_Fram_Record .Data_RX_BUF[
+				    strEsp8266_Fram_Record .InfBit .FramLength] = '\0';
+				Usart_SendString(DEBUG_USARTx,
+				    strEsp8266_Fram_Record .Data_RX_BUF);
+				strEsp8266_Fram_Record .InfBit .FramLength = 0;
+				strEsp8266_Fram_Record .InfBit .FramFinishFlag = 0;
+			}
+		}
+  }
+}
+/*********************************************END OF FILE**********************/
