@@ -66,7 +66,7 @@ I (..\..\User\stm32f10x_conf.h)(0x6656E054)
 I (..\..\Libraries\FWlib\inc\stm32f10x_gpio.h)(0x6656E054)
 I (..\..\Libraries\FWlib\inc\stm32f10x_rcc.h)(0x6656E054)
 I (..\..\Libraries\FWlib\inc\misc.h)(0x6656E054)
-F (..\..\User\main.c)(0x6A3A9C39)(-c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork -I ..\..\Libraries\CMSIS -I ..\..\User -I ..\..\Libraries\FWlib\inc -I ..\..\User\usart -I ..\..\User\ESP8266 -I ..\..\User\Common -I ..\..\User\SysTick -I ..\..\User\dwt_delay-I.\RTE\_USART-ID:\Qianrushi\ARM\PACK\Keil\STM32F1xx_DFP\2.2.0\Device\Include-ID:\Qianrushi\ARM\CMSIS\Include-D__UVISION_VERSION="524" -DSTM32F10X_HD -DSTM32F10X_HD -DUSE_STDPERIPH_DRIVER-o ..\..\output\main.o --omf_browse ..\..\output\main.crf --depend ..\..\output\main.d)
+F (..\..\User\main.c)(0x6A3FE911)(-c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork -I ..\..\Libraries\CMSIS -I ..\..\User -I ..\..\Libraries\FWlib\inc -I ..\..\User\usart -I ..\..\User\ESP8266 -I ..\..\User\Common -I ..\..\User\SysTick -I ..\..\User\dwt_delay-I.\RTE\_USART-ID:\Qianrushi\ARM\PACK\Keil\STM32F1xx_DFP\2.2.0\Device\Include-ID:\Qianrushi\ARM\CMSIS\Include-D__UVISION_VERSION="524" -DSTM32F10X_HD -DSTM32F10X_HD -DUSE_STDPERIPH_DRIVER-o ..\..\output\main.o --omf_browse ..\..\output\main.crf --depend ..\..\output\main.d)
 I (..\..\Libraries\CMSIS\stm32f10x.h)(0x6656E054)
 I (..\..\Libraries\CMSIS\core_cm3.h)(0x6656E054)
 I (D:\Qianrushi\ARM\ARMCC\include\stdint.h)(0x588B8344)
@@ -78,10 +78,11 @@ I (..\..\Libraries\FWlib\inc\stm32f10x_usart.h)(0x6656E054)
 I (..\..\Libraries\FWlib\inc\misc.h)(0x6656E054)
 I (..\..\User\usart\bsp_usart.h)(0x6656E054)
 I (D:\Qianrushi\ARM\ARMCC\include\stdio.h)(0x588B8344)
-I (..\..\User\ESP8266\bsp_esp8266.h)(0x6656E054)
+I (..\..\User\ESP8266\bsp_esp8266.h)(0x6A3FE828)
 I (..\..\User\Common\common.h)(0x6656E054)
 I (D:\Qianrushi\ARM\ARMCC\include\stdbool.h)(0x588B8344)
 I (..\..\User\dwt_delay\core_delay.h)(0x6656E054)
+I (D:\Qianrushi\ARM\ARMCC\include\string.h)(0x588B8344)
 F (..\..\User\stm32f10x_conf.h)(0x6656E054)()
 F (..\..\User\stm32f10x_it.c)(0x6656E054)(-c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork -I ..\..\Libraries\CMSIS -I ..\..\User -I ..\..\Libraries\FWlib\inc -I ..\..\User\usart -I ..\..\User\ESP8266 -I ..\..\User\Common -I ..\..\User\SysTick -I ..\..\User\dwt_delay-I.\RTE\_USART-ID:\Qianrushi\ARM\PACK\Keil\STM32F1xx_DFP\2.2.0\Device\Include-ID:\Qianrushi\ARM\CMSIS\Include-D__UVISION_VERSION="524" -DSTM32F10X_HD -DSTM32F10X_HD -DUSE_STDPERIPH_DRIVER-o ..\..\output\stm32f10x_it.o --omf_browse ..\..\output\stm32f10x_it.crf --depend ..\..\output\stm32f10x_it.d)
 I (..\..\User\stm32f10x_it.h)(0x6656E054)
@@ -96,7 +97,7 @@ I (..\..\Libraries\FWlib\inc\stm32f10x_usart.h)(0x6656E054)
 I (..\..\Libraries\FWlib\inc\misc.h)(0x6656E054)
 I (..\..\User\usart\bsp_usart.h)(0x6656E054)
 I (D:\Qianrushi\ARM\ARMCC\include\stdio.h)(0x588B8344)
-I (..\..\User\ESP8266\bsp_esp8266.h)(0x6656E054)
+I (..\..\User\ESP8266\bsp_esp8266.h)(0x6A3FE828)
 I (..\..\User\Common\common.h)(0x6656E054)
 I (D:\Qianrushi\ARM\ARMCC\include\stdbool.h)(0x588B8344)
 F (..\..\User\stm32f10x_it.h)(0x6656E054)()
@@ -123,8 +124,8 @@ I (..\..\Libraries\FWlib\inc\stm32f10x_gpio.h)(0x6656E054)
 I (..\..\Libraries\FWlib\inc\stm32f10x_rcc.h)(0x6656E054)
 I (..\..\Libraries\FWlib\inc\stm32f10x_usart.h)(0x6656E054)
 I (..\..\Libraries\FWlib\inc\misc.h)(0x6656E054)
-F (..\..\User\ESP8266\bsp_esp8266.c)(0x6656E054)(-c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork -I ..\..\Libraries\CMSIS -I ..\..\User -I ..\..\Libraries\FWlib\inc -I ..\..\User\usart -I ..\..\User\ESP8266 -I ..\..\User\Common -I ..\..\User\SysTick -I ..\..\User\dwt_delay-I.\RTE\_USART-ID:\Qianrushi\ARM\PACK\Keil\STM32F1xx_DFP\2.2.0\Device\Include-ID:\Qianrushi\ARM\CMSIS\Include-D__UVISION_VERSION="524" -DSTM32F10X_HD -DSTM32F10X_HD -DUSE_STDPERIPH_DRIVER-o ..\..\output\bsp_esp8266.o --omf_browse ..\..\output\bsp_esp8266.crf --depend ..\..\output\bsp_esp8266.d)
-I (..\..\User\ESP8266\bsp_esp8266.h)(0x6656E054)
+F (..\..\User\ESP8266\bsp_esp8266.c)(0x6A3FD323)(-c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork -I ..\..\Libraries\CMSIS -I ..\..\User -I ..\..\Libraries\FWlib\inc -I ..\..\User\usart -I ..\..\User\ESP8266 -I ..\..\User\Common -I ..\..\User\SysTick -I ..\..\User\dwt_delay-I.\RTE\_USART-ID:\Qianrushi\ARM\PACK\Keil\STM32F1xx_DFP\2.2.0\Device\Include-ID:\Qianrushi\ARM\CMSIS\Include-D__UVISION_VERSION="524" -DSTM32F10X_HD -DSTM32F10X_HD -DUSE_STDPERIPH_DRIVER-o ..\..\output\bsp_esp8266.o --omf_browse ..\..\output\bsp_esp8266.crf --depend ..\..\output\bsp_esp8266.d)
+I (..\..\User\ESP8266\bsp_esp8266.h)(0x6A3FE828)
 I (..\..\Libraries\CMSIS\stm32f10x.h)(0x6656E054)
 I (..\..\Libraries\CMSIS\core_cm3.h)(0x6656E054)
 I (D:\Qianrushi\ARM\ARMCC\include\stdint.h)(0x588B8344)

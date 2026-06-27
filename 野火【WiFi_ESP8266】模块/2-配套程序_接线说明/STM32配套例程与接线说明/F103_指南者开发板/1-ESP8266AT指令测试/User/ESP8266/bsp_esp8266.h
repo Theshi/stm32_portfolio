@@ -58,7 +58,7 @@ extern struct  STRUCT_USARTx_Fram                                  //´®¿ÚÊý¾ÝÖ¡µ
 	char  Data_RX_BUF [ RX_BUF_MAX_LEN ];
 	
   union {
-    __IO u16 InfAll;
+    __IO u16 InfAll;//15:0
     struct {
 		  __IO u16 FramLength       :15;                               // 14:0 
 		  __IO u16 FramFinishFlag   :1;                                // 15 

@@ -1,9 +1,9 @@
 #include "bsp_esp8266.h"
 #include "common.h"
-#include <stdio.h>  
-#include <string.h>  
+#include <stdio.h>
+#include <string.h>
 #include <stdbool.h>
-#include "core_delay.h" 
+#include "core_delay.h"
 
 
 
@@ -18,87 +18,87 @@ struct  STRUCT_USARTx_Fram strUSART_Fram_Record = { 0 };
 
 
 /**
-  * @brief  ESP8266³õÊ¼»¯º¯Êı
-  * @param  ÎŞ
-  * @retval ÎŞ
+  * @brief  ESP8266åˆå§‹åŒ–å‡½æ•°
+  * @param  æ— 
+  * @retval æ— 
   */
 void ESP8266_Init ( void )
 {
-	ESP8266_GPIO_Config (); 
-	
-	ESP8266_USART_Config (); 
-	
-	
+	ESP8266_GPIO_Config ();
+
+	ESP8266_USART_Config ();
+
+
 	macESP8266_RST_HIGH_LEVEL();
 
 	macESP8266_CH_ENABLE();
-	
-	
+
+
 }
 
 
 /**
-  * @brief  ³õÊ¼»¯ESP8266ÓÃµ½µÄGPIOÒı½Å
-  * @param  ÎŞ
-  * @retval ÎŞ
+  * @brief  åˆå§‹åŒ–ESP8266ç”¨åˆ°çš„GPIOå¼•è„š
+  * @param  æ— 
+  * @retval æ— 
   */
 static void ESP8266_GPIO_Config ( void )
 {
-	/*¶¨ÒåÒ»¸öGPIO_InitTypeDefÀàĞÍµÄ½á¹¹Ìå*/
+	/*å®šä¹‰ä¸€ä¸ªGPIO_InitTypeDefç±»å‹çš„ç»“æ„ä½“*/
 	GPIO_InitTypeDef GPIO_InitStructure;
 
 
-	/* ÅäÖÃ CH_PD Òı½Å*/
-	macESP8266_CH_PD_APBxClock_FUN ( macESP8266_CH_PD_CLK, ENABLE ); 
-											   
-	GPIO_InitStructure.GPIO_Pin = macESP8266_CH_PD_PIN;	
+	/* å¼€å¯ CH_PD æ—¶é’Ÿ*/
+	macESP8266_CH_PD_APBxClock_FUN ( macESP8266_CH_PD_CLK, ENABLE );
 
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;   
-   
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; 
+	GPIO_InitStructure.GPIO_Pin = macESP8266_CH_PD_PIN;
 
-	GPIO_Init ( macESP8266_CH_PD_PORT, & GPIO_InitStructure );	 
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 
-	
-	/* ÅäÖÃ RST Òı½Å*/
-	macESP8266_RST_APBxClock_FUN ( macESP8266_RST_CLK, ENABLE ); 
-											   
-	GPIO_InitStructure.GPIO_Pin = macESP8266_RST_PIN;	
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 
-	GPIO_Init ( macESP8266_RST_PORT, & GPIO_InitStructure );	 
+	GPIO_Init ( macESP8266_CH_PD_PORT, & GPIO_InitStructure );
+
+
+	/* å¼€å¯ RST æ—¶é’Ÿ*/
+	macESP8266_RST_APBxClock_FUN ( macESP8266_RST_CLK, ENABLE );
+
+	GPIO_InitStructure.GPIO_Pin = macESP8266_RST_PIN;
+
+	GPIO_Init ( macESP8266_RST_PORT, & GPIO_InitStructure );
 
 
 }
 
 
 /**
-  * @brief  ³õÊ¼»¯ESP8266ÓÃµ½µÄ USART
-  * @param  ÎŞ
-  * @retval ÎŞ
+  * @brief  åˆå§‹åŒ–ESP8266ç”¨åˆ°çš„ USART
+  * @param  æ— 
+  * @retval æ— 
   */
 static void ESP8266_USART_Config ( void )
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
 	USART_InitTypeDef USART_InitStructure;
-	
-	
+
+
 	/* config USART clock */
 	macESP8266_USART_APBxClock_FUN ( macESP8266_USART_CLK, ENABLE );
 	macESP8266_USART_GPIO_APBxClock_FUN ( macESP8266_USART_GPIO_CLK, ENABLE );
-	
+
 	/* USART GPIO config */
 	/* Configure USART Tx as alternate function push-pull */
 	GPIO_InitStructure.GPIO_Pin =  macESP8266_USART_TX_PIN;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(macESP8266_USART_TX_PORT, &GPIO_InitStructure);  
-  
+	GPIO_Init(macESP8266_USART_TX_PORT, &GPIO_InitStructure);
+
 	/* Configure USART Rx as input floating */
 	GPIO_InitStructure.GPIO_Pin = macESP8266_USART_RX_PIN;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init(macESP8266_USART_RX_PORT, &GPIO_InitStructure);
-	
-	/* USART1 mode config */
+
+	/* USART mode config */
 	USART_InitStructure.USART_BaudRate = macESP8266_USART_BAUD_RATE;
 	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
 	USART_InitStructure.USART_StopBits = USART_StopBits_1;
@@ -106,36 +106,36 @@ static void ESP8266_USART_Config ( void )
 	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
 	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
 	USART_Init(macESP8266_USARTx, &USART_InitStructure);
-	
-	
-	/* ÖĞ¶ÏÅäÖÃ */
-	USART_ITConfig ( macESP8266_USARTx, USART_IT_RXNE, ENABLE ); //Ê¹ÄÜ´®¿Ú½ÓÊÕÖĞ¶Ï 
-	USART_ITConfig ( macESP8266_USARTx, USART_IT_IDLE, ENABLE ); //Ê¹ÄÜ´®¿Ú×ÜÏß¿ÕÏĞÖĞ¶Ï 	
+
+
+	/* ä¸­æ–­é…ç½® */
+	USART_ITConfig ( macESP8266_USARTx, USART_IT_RXNE, ENABLE ); //ä½¿èƒ½ä¸²å£æ¥æ”¶ä¸­æ–­
+	USART_ITConfig ( macESP8266_USARTx, USART_IT_IDLE, ENABLE ); //ä½¿èƒ½ä¸²å£æ€»çº¿ç©ºé—²ä¸­æ–­
 
 	ESP8266_USART_NVIC_Configuration ();
-	
-	
+
+
 	USART_Cmd(macESP8266_USARTx, ENABLE);
-	
-	
+
+
 }
 
 
 /**
-  * @brief  ÅäÖÃ ESP8266 USART µÄ NVIC ÖĞ¶Ï
-  * @param  ÎŞ
-  * @retval ÎŞ
+  * @brief  é…ç½® ESP8266 USART çš„ NVIC ä¸­æ–­
+  * @param  æ— 
+  * @retval æ— 
   */
 static void ESP8266_USART_NVIC_Configuration ( void )
 {
-	NVIC_InitTypeDef NVIC_InitStructure; 
-	
-	
-	/* Configure the NVIC Preemption Priority Bits */  
+	NVIC_InitTypeDef NVIC_InitStructure;
+
+
+	/* Configure the NVIC Preemption Priority Bits */
 	NVIC_PriorityGroupConfig ( macNVIC_PriorityGroup_x );
 
-	/* Enable the USART2 Interrupt */
-	NVIC_InitStructure.NVIC_IRQChannel = macESP8266_USART_IRQ;	 
+	/* Enable the USART3 Interrupt */
+	NVIC_InitStructure.NVIC_IRQChannel = macESP8266_USART_IRQ;
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
@@ -145,20 +145,20 @@ static void ESP8266_USART_NVIC_Configuration ( void )
 
 
 /*
- * º¯ÊıÃû£ºESP8266_Rst
- * ÃèÊö  £ºÖØÆôWF-ESP8266Ä£¿é
- * ÊäÈë  £ºÎŞ
- * ·µ»Ø  : ÎŞ
- * µ÷ÓÃ  £º±» ESP8266_AT_Test µ÷ÓÃ
+ * å‡½æ•°åï¼šESP8266_Rst
+ * æè¿°  ï¼šå¤ä½WF-ESP8266æ¨¡å—
+ * è¾“å…¥  ï¼šæ— 
+ * è¾“å‡º  : æ— 
+ * è°ƒç”¨  : è¢« ESP8266_AT_Test è°ƒç”¨
  */
 void ESP8266_Rst ( void )
 {
 	#if 0
-	 ESP8266_Cmd ( "AT+RST", "OK", "ready", 2500 );   	
-	
+	 ESP8266_Cmd ( "AT+RST", "OK", "ready", 2500 );
+
 	#else
 	 macESP8266_RST_LOW_LEVEL();
-	 Delay_ms ( 500 ); 
+	 Delay_ms ( 500 );
 	 macESP8266_RST_HIGH_LEVEL();
 	#endif
 
@@ -166,64 +166,64 @@ void ESP8266_Rst ( void )
 
 
 /*
- * º¯ÊıÃû£ºESP8266_Cmd
- * ÃèÊö  £º¶ÔWF-ESP8266Ä£¿é·¢ËÍATÖ¸Áî
- * ÊäÈë  £ºcmd£¬´ı·¢ËÍµÄÖ¸Áî
- *         reply1£¬reply2£¬ÆÚ´ıµÄÏìÓ¦£¬ÎªNULL±í²»ĞèÏìÓ¦£¬Á½ÕßÎª»òÂß¼­¹ØÏµ
- *         waittime£¬µÈ´ıÏìÓ¦µÄÊ±¼ä
- * ·µ»Ø  : 1£¬Ö¸Áî·¢ËÍ³É¹¦
- *         0£¬Ö¸Áî·¢ËÍÊ§°Ü
- * µ÷ÓÃ  £º±»Íâ²¿µ÷ÓÃ
+ * å‡½æ•°åï¼šESP8266_Cmd
+ * æè¿°  ï¼šå‘WF-ESP8266æ¨¡å—å‘é€ATæŒ‡ä»¤
+ * è¾“å…¥  ï¼šcmdï¼šå‘é€çš„æŒ‡ä»¤
+ *         reply1ã€reply2ï¼šæœŸå¾…çš„åº”ç­”ï¼Œä¸ºNULLæ—¶ä¸éœ€è¦åº”ç­”ï¼Œä¸¤è€…ä¸ºé€»è¾‘æˆ–å…³ç³»
+ *         waittimeï¼šç­‰å¾…åº”ç­”çš„æ—¶é—´
+ * è¾“å‡º  : 1ï¼šæŒ‡ä»¤å‘é€æˆåŠŸ
+ *         0ï¼šæŒ‡ä»¤å‘é€å¤±è´¥
+ * è°ƒç”¨  : è¢«å¤–éƒ¨è°ƒç”¨
  */
 bool ESP8266_Cmd ( char * cmd, char * reply1, char * reply2, u32 waittime )
-{    
-	strEsp8266_Fram_Record .InfBit .FramLength = 0;               //´ÓĞÂ¿ªÊ¼½ÓÊÕĞÂµÄÊı¾İ°ü
+{
+	strEsp8266_Fram_Record .InfBit .FramLength = 0;               //é‡æ–°å¼€å§‹æ¥æ”¶æ–°çš„æ•°æ®åŒ…
 
 	macESP8266_Usart ( "%s\r\n", cmd );
 
-	if ( ( reply1 == 0 ) && ( reply2 == 0 ) )                      //²»ĞèÒª½ÓÊÕÊı¾İ
+	if ( ( reply1 == 0 ) && ( reply2 == 0 ) )                      //ä¸éœ€è¦ç­‰å¾…åº”ç­”
 		return true;
-	
-	Delay_ms ( waittime );                 //ÑÓÊ±
-	
+
+	Delay_ms ( waittime );                 //å»¶æ—¶
+
 	strEsp8266_Fram_Record .Data_RX_BUF [ strEsp8266_Fram_Record .InfBit .FramLength ]  = '\0';
 
 	macPC_Usart ( "%s", strEsp8266_Fram_Record .Data_RX_BUF );
-  
+
 	if ( ( reply1 != 0 ) && ( reply2 != 0 ) )
-		return ( ( bool ) strstr ( strEsp8266_Fram_Record .Data_RX_BUF, reply1 ) || 
-						 ( bool ) strstr ( strEsp8266_Fram_Record .Data_RX_BUF, reply2 ) ); 
- 	
+		return ( ( bool ) strstr ( strEsp8266_Fram_Record .Data_RX_BUF, reply1 ) ||
+						 ( bool ) strstr ( strEsp8266_Fram_Record .Data_RX_BUF, reply2 ) );
+
 	else if ( reply1 != 0 )
 		return ( ( bool ) strstr ( strEsp8266_Fram_Record .Data_RX_BUF, reply1 ) );
-	
+
 	else
 		return ( ( bool ) strstr ( strEsp8266_Fram_Record .Data_RX_BUF, reply2 ) );
-	
+
 }
 
 
 /*
- * º¯ÊıÃû£ºESP8266_AT_Test
- * ÃèÊö  £º¶ÔWF-ESP8266Ä£¿é½øĞĞAT²âÊÔÆô¶¯
- * ÊäÈë  £ºÎŞ
- * ·µ»Ø  : ÎŞ
- * µ÷ÓÃ  £º±»Íâ²¿µ÷ÓÃ
+ * å‡½æ•°åï¼šESP8266_AT_Test
+ * æè¿°  ï¼šå‘WF-ESP8266æ¨¡å—å‘é€ATæµ‹è¯•å‘½ä»¤
+ * è¾“å…¥  ï¼šæ— 
+ * è¾“å‡º  : æ— 
+ * è°ƒç”¨  : è¢«å¤–éƒ¨è°ƒç”¨
  */
 //void ESP8266_AT_Test ( void )
 //{
 //	macESP8266_RST_HIGH_LEVEL();
-//	
-//	Delay_ms ( 1000 ); 
-//	
-//	while ( ! ESP8266_Cmd ( "AT", "OK", NULL, 500 ) ) ESP8266_Rst ();  	
+//
+//	Delay_ms ( 1000 );
+//
+//	while ( ! ESP8266_Cmd ( "AT", "OK", NULL, 500 ) ) ESP8266_Rst ();
 
 //}
 void ESP8266_AT_Test ( void )
 {
 	char count=0;
-	
-	macESP8266_RST_HIGH_LEVEL();	
+
+	macESP8266_RST_HIGH_LEVEL();
 	Delay_ms ( 1000 );
 	while ( count < 10 )
 	{
@@ -235,103 +235,103 @@ void ESP8266_AT_Test ( void )
 
 
 /*
- * º¯ÊıÃû£ºESP8266_Net_Mode_Choose
- * ÃèÊö  £ºÑ¡ÔñWF-ESP8266Ä£¿éµÄ¹¤×÷Ä£Ê½
- * ÊäÈë  £ºenumMode£¬¹¤×÷Ä£Ê½
- * ·µ»Ø  : 1£¬Ñ¡Ôñ³É¹¦
- *         0£¬Ñ¡ÔñÊ§°Ü
- * µ÷ÓÃ  £º±»Íâ²¿µ÷ÓÃ
+ * å‡½æ•°åï¼šESP8266_Net_Mode_Choose
+ * æè¿°  ï¼šé€‰æ‹©WF-ESP8266æ¨¡å—çš„å·¥ä½œæ¨¡å¼
+ * è¾“å…¥  ï¼šenumModeï¼šå·¥ä½œæ¨¡å¼
+ * è¾“å‡º  : 1ï¼šé€‰æ‹©æˆåŠŸ
+ *         0ï¼šé€‰æ‹©å¤±è´¥
+ * è°ƒç”¨  : è¢«å¤–éƒ¨è°ƒç”¨
  */
 bool ESP8266_Net_Mode_Choose ( ENUM_Net_ModeTypeDef enumMode )
 {
 	switch ( enumMode )
 	{
 		case STA:
-			return ESP8266_Cmd ( "AT+CWMODE=1", "OK", "no change", 2500 ); 
-		
+			return ESP8266_Cmd ( "AT+CWMODE=1", "OK", "no change", 2500 );
+
 	  case AP:
-		  return ESP8266_Cmd ( "AT+CWMODE=2", "OK", "no change", 2500 ); 
-		
+		  return ESP8266_Cmd ( "AT+CWMODE=2", "OK", "no change", 2500 );
+
 		case STA_AP:
-		  return ESP8266_Cmd ( "AT+CWMODE=3", "OK", "no change", 2500 ); 
-		
+		  return ESP8266_Cmd ( "AT+CWMODE=3", "OK", "no change", 2500 );
+
 	  default:
 		  return false;
   }
-	
+
 }
 
 
 /*
- * º¯ÊıÃû£ºESP8266_JoinAP
- * ÃèÊö  £ºWF-ESP8266Ä£¿éÁ¬½ÓÍâ²¿WiFi
- * ÊäÈë  £ºpSSID£¬WiFiÃû³Æ×Ö·û´®
- *       £ºpPassWord£¬WiFiÃÜÂë×Ö·û´®
- * ·µ»Ø  : 1£¬Á¬½Ó³É¹¦
- *         0£¬Á¬½ÓÊ§°Ü
- * µ÷ÓÃ  £º±»Íâ²¿µ÷ÓÃ
+ * å‡½æ•°åï¼šESP8266_JoinAP
+ * æè¿°  ï¼šWF-ESP8266æ¨¡å—è¿æ¥å¤–éƒ¨WiFi
+ * è¾“å…¥  ï¼špSSIDï¼šWiFiåç§°å­—ç¬¦ä¸²
+ *        pPassWordï¼šWiFiå¯†ç å­—ç¬¦ä¸²
+ * è¾“å‡º  : 1ï¼šè¿æ¥æˆåŠŸ
+ *         0ï¼šè¿æ¥å¤±è´¥
+ * è°ƒç”¨  : è¢«å¤–éƒ¨è°ƒç”¨
  */
 bool ESP8266_JoinAP ( char * pSSID, char * pPassWord )
 {
 	char cCmd [120];
 
 	sprintf ( cCmd, "AT+CWJAP=\"%s\",\"%s\"", pSSID, pPassWord );
-	
+
 	return ESP8266_Cmd ( cCmd, "OK", NULL, 5000 );
-	
+
 }
 
 
 /*
- * º¯ÊıÃû£ºESP8266_BuildAP
- * ÃèÊö  £ºWF-ESP8266Ä£¿é´´½¨WiFiÈÈµã
- * ÊäÈë  £ºpSSID£¬WiFiÃû³Æ×Ö·û´®
- *       £ºpPassWord£¬WiFiÃÜÂë×Ö·û´®
- *       £ºenunPsdMode£¬WiFi¼ÓÃÜ·½Ê½´úºÅ×Ö·û´®
- * ·µ»Ø  : 1£¬´´½¨³É¹¦
- *         0£¬´´½¨Ê§°Ü
- * µ÷ÓÃ  £º±»Íâ²¿µ÷ÓÃ
+ * å‡½æ•°åï¼šESP8266_BuildAP
+ * æè¿°  ï¼šWF-ESP8266æ¨¡å—åˆ›å»ºWiFiçƒ­ç‚¹
+ * è¾“å…¥  ï¼špSSIDï¼šWiFiåç§°å­—ç¬¦ä¸²
+ *        pPassWordï¼šWiFiå¯†ç å­—ç¬¦ä¸²
+ *        enunPsdModeï¼šWiFiåŠ å¯†æ–¹å¼ï¼Œè¯¥å‚æ•°ä¸ºå­—ç¬¦ä¸²
+ * è¾“å‡º  : 1ï¼šåˆ›å»ºæˆåŠŸ
+ *         0ï¼šåˆ›å»ºå¤±è´¥
+ * è°ƒç”¨  : è¢«å¤–éƒ¨è°ƒç”¨
  */
 bool ESP8266_BuildAP ( char * pSSID, char * pPassWord, ENUM_AP_PsdMode_TypeDef enunPsdMode )
 {
 	char cCmd [120];
 
 	sprintf ( cCmd, "AT+CWSAP=\"%s\",\"%s\",1,%d", pSSID, pPassWord, enunPsdMode );
-	
+
 	return ESP8266_Cmd ( cCmd, "OK", 0, 1000 );
-	
+
 }
 
 
 /*
- * º¯ÊıÃû£ºESP8266_Enable_MultipleId
- * ÃèÊö  £ºWF-ESP8266Ä£¿éÆô¶¯¶àÁ¬½Ó
- * ÊäÈë  £ºenumEnUnvarnishTx£¬ÅäÖÃÊÇ·ñ¶àÁ¬½Ó
- * ·µ»Ø  : 1£¬ÅäÖÃ³É¹¦
- *         0£¬ÅäÖÃÊ§°Ü
- * µ÷ÓÃ  £º±»Íâ²¿µ÷ÓÃ
+ * å‡½æ•°åï¼šESP8266_Enable_MultipleId
+ * æè¿°  ï¼šWF-ESP8266æ¨¡å—å¼€å¯å¤šè¿æ¥
+ * è¾“å…¥  ï¼šenumEnUnvarnishTxï¼šé…ç½®æ˜¯å¦å¼€å¯å¤šè¿æ¥
+ * è¾“å‡º  : 1ï¼šé…ç½®æˆåŠŸ
+ *         0ï¼šé…ç½®å¤±è´¥
+ * è°ƒç”¨  : è¢«å¤–éƒ¨è°ƒç”¨
  */
 bool ESP8266_Enable_MultipleId ( FunctionalState enumEnUnvarnishTx )
 {
 	char cStr [20];
-	
+
 	sprintf ( cStr, "AT+CIPMUX=%d", ( enumEnUnvarnishTx ? 1 : 0 ) );
-	
+
 	return ESP8266_Cmd ( cStr, "OK", 0, 500 );
-	
+
 }
 
 
 /*
- * º¯ÊıÃû£ºESP8266_Link_Server
- * ÃèÊö  £ºWF-ESP8266Ä£¿éÁ¬½ÓÍâ²¿·şÎñÆ÷
- * ÊäÈë  £ºenumE£¬ÍøÂçĞ­Òé
- *       £ºip£¬·şÎñÆ÷IP×Ö·û´®
- *       £ºComNum£¬·şÎñÆ÷¶Ë¿Ú×Ö·û´®
- *       £ºid£¬Ä£¿éÁ¬½Ó·şÎñÆ÷µÄID
- * ·µ»Ø  : 1£¬Á¬½Ó³É¹¦
- *         0£¬Á¬½ÓÊ§°Ü
- * µ÷ÓÃ  £º±»Íâ²¿µ÷ÓÃ
+ * å‡½æ•°åï¼šESP8266_Link_Server
+ * æè¿°  ï¼šWF-ESP8266æ¨¡å—è¿æ¥å¤–éƒ¨æœåŠ¡å™¨
+ * è¾“å…¥  ï¼šenumEï¼šç½‘ç»œåè®®
+ *        ipï¼šæœåŠ¡å™¨IPå­—ç¬¦ä¸²
+ *        ComNumï¼šæœåŠ¡å™¨ç«¯å£å·å­—ç¬¦ä¸²
+ *        idï¼šæ¨¡å—è¿æ¥æœåŠ¡å™¨ID
+ * è¾“å‡º  : 1ï¼šè¿æ¥æˆåŠŸ
+ *         0ï¼šè¿æ¥å¤±è´¥
+ * è°ƒç”¨  : è¢«å¤–éƒ¨è°ƒç”¨
  */
 bool ESP8266_Link_Server ( ENUM_NetPro_TypeDef enumE, char * ip, char * ComNum, ENUM_ID_NO_TypeDef id)
 {
@@ -342,11 +342,11 @@ bool ESP8266_Link_Server ( ENUM_NetPro_TypeDef enumE, char * ip, char * ComNum, 
 		case enumTCP:
 		  sprintf ( cStr, "\"%s\",\"%s\",%s", "TCP", ip, ComNum );
 		  break;
-		
+
 		case enumUDP:
 		  sprintf ( cStr, "\"%s\",\"%s\",%s", "UDP", ip, ComNum );
 		  break;
-		
+
 		default:
 			break;
   }
@@ -358,19 +358,19 @@ bool ESP8266_Link_Server ( ENUM_NetPro_TypeDef enumE, char * ip, char * ComNum, 
 	  sprintf ( cCmd, "AT+CIPSTART=%s", cStr );
 
 	return ESP8266_Cmd ( cCmd, "OK", "ALREAY CONNECT", 4000 );
-	
+
 }
 
 
 /*
- * º¯ÊıÃû£ºESP8266_StartOrShutServer
- * ÃèÊö  £ºWF-ESP8266Ä£¿é¿ªÆô»ò¹Ø±Õ·şÎñÆ÷Ä£Ê½
- * ÊäÈë  £ºenumMode£¬¿ªÆô/¹Ø±Õ
- *       £ºpPortNum£¬·şÎñÆ÷¶Ë¿ÚºÅ×Ö·û´®
- *       £ºpTimeOver£¬·şÎñÆ÷³¬Ê±Ê±¼ä×Ö·û´®£¬µ¥Î»£ºÃë
- * ·µ»Ø  : 1£¬²Ù×÷³É¹¦
- *         0£¬²Ù×÷Ê§°Ü
- * µ÷ÓÃ  £º±»Íâ²¿µ÷ÓÃ
+ * å‡½æ•°åï¼šESP8266_StartOrShutServer
+ * æè¿°  ï¼šWF-ESP8266æ¨¡å—å¼€å¯æˆ–å…³é—­æœåŠ¡å™¨æ¨¡å¼
+ * è¾“å…¥  ï¼šenumModeï¼šå¼€å¯/å…³é—­
+ *        pPortNumï¼šæœåŠ¡å™¨ç«¯å£å·å­—ç¬¦ä¸²
+ *        pTimeOverï¼šæœåŠ¡å™¨è¶…æ—¶æ—¶é—´å­—ç¬¦ä¸²ï¼Œå•ä½ç§’
+ * è¾“å‡º  : 1ï¼šè®¾ç½®æˆåŠŸ
+ *         0ï¼šè®¾ç½®å¤±è´¥
+ * è°ƒç”¨  : è¢«å¤–éƒ¨è°ƒç”¨
  */
 bool ESP8266_StartOrShutServer ( FunctionalState enumMode, char * pPortNum, char * pTimeOver )
 {
@@ -379,32 +379,32 @@ bool ESP8266_StartOrShutServer ( FunctionalState enumMode, char * pPortNum, char
 	if ( enumMode )
 	{
 		sprintf ( cCmd1, "AT+CIPSERVER=%d,%s", 1, pPortNum );
-		
+
 		sprintf ( cCmd2, "AT+CIPSTO=%s", pTimeOver );
 
 		return ( ESP8266_Cmd ( cCmd1, "OK", 0, 500 ) &&
 						 ESP8266_Cmd ( cCmd2, "OK", 0, 500 ) );
 	}
-	
+
 	else
 	{
 		sprintf ( cCmd1, "AT+CIPSERVER=%d,%s", 0, pPortNum );
 
 		return ESP8266_Cmd ( cCmd1, "OK", 0, 500 );
 	}
-	
+
 }
 
 
 /*
- * º¯ÊıÃû£ºESP8266_Get_LinkStatus
- * ÃèÊö  £º»ñÈ¡ WF-ESP8266 µÄÁ¬½Ó×´Ì¬£¬½ÏÊÊºÏµ¥¶Ë¿ÚÊ±Ê¹ÓÃ
- * ÊäÈë  £ºÎŞ
- * ·µ»Ø  : 2£¬»ñµÃip
- *         3£¬½¨Á¢Á¬½Ó
- *         3£¬Ê§È¥Á¬½Ó
- *         0£¬»ñÈ¡×´Ì¬Ê§°Ü
- * µ÷ÓÃ  £º±»Íâ²¿µ÷ÓÃ
+ * å‡½æ•°åï¼šESP8266_Get_LinkStatus
+ * æè¿°  ï¼šè·å– WF-ESP8266 çš„è¿æ¥çŠ¶æ€ï¼Œé€‚åˆå•ç«¯å£æ—¶ä½¿ç”¨
+ * è¾“å…¥  ï¼šæ— 
+ * è¾“å‡º  : 2ï¼šè·å¾—ip
+ *         3ï¼šå»ºç«‹è¿æ¥
+ *         4ï¼šå¤±å»è¿æ¥
+ *         0ï¼šè·å–çŠ¶æ€å¤±è´¥
+ * è°ƒç”¨  : è¢«å¤–éƒ¨è°ƒç”¨
  */
 uint8_t ESP8266_Get_LinkStatus ( void )
 {
@@ -412,169 +412,169 @@ uint8_t ESP8266_Get_LinkStatus ( void )
 	{
 		if ( strstr ( strEsp8266_Fram_Record .Data_RX_BUF, "STATUS:2\r\n" ) )
 			return 2;
-		
+
 		else if ( strstr ( strEsp8266_Fram_Record .Data_RX_BUF, "STATUS:3\r\n" ) )
 			return 3;
-		
+
 		else if ( strstr ( strEsp8266_Fram_Record .Data_RX_BUF, "STATUS:4\r\n" ) )
-			return 4;		
+			return 4;
 
 	}
-	
+
 	return 0;
-	
+
 }
 
 
 /*
- * º¯ÊıÃû£ºESP8266_Get_IdLinkStatus
- * ÃèÊö  £º»ñÈ¡ WF-ESP8266 µÄ¶Ë¿Ú£¨Id£©Á¬½Ó×´Ì¬£¬½ÏÊÊºÏ¶à¶Ë¿ÚÊ±Ê¹ÓÃ
- * ÊäÈë  £ºÎŞ
- * ·µ»Ø  : ¶Ë¿Ú£¨Id£©µÄÁ¬½Ó×´Ì¬£¬µÍ5Î»ÎªÓĞĞ§Î»£¬·Ö±ğ¶ÔÓ¦Id5~0£¬Ä³Î»ÈôÖÃ1±í¸ÃId½¨Á¢ÁËÁ¬½Ó£¬Èô±»Çå0±í¸ÃIdÎ´½¨Á¢Á¬½Ó
- * µ÷ÓÃ  £º±»Íâ²¿µ÷ÓÃ
+ * å‡½æ•°åï¼šESP8266_Get_IdLinkStatus
+ * æè¿°  ï¼šè·å– WF-ESP8266 çš„ç«¯å£ï¼ˆIdï¼‰è¿æ¥çŠ¶æ€ï¼Œé€‚åˆå¤šç«¯å£æ—¶ä½¿ç”¨
+ * è¾“å…¥  ï¼šæ— 
+ * è¾“å‡º  : ç«¯å£ï¼ˆIdï¼‰è¿æ¥çŠ¶æ€ï¼Œä½5ä½ä¸ºæœ‰æ•ˆä½ï¼Œåˆ†åˆ«å¯¹åº”Id5~0ï¼ŒæŸä½ä¸º1åˆ™è¯¥Idå»ºç«‹è¿æ¥ï¼Œä¸º0åˆ™è¯¥Idæœªå»ºç«‹è¿æ¥
+ * è°ƒç”¨  : è¢«å¤–éƒ¨è°ƒç”¨
  */
 uint8_t ESP8266_Get_IdLinkStatus ( void )
 {
 	uint8_t ucIdLinkStatus = 0x00;
-	
-	
+
+
 	if ( ESP8266_Cmd ( "AT+CIPSTATUS", "OK", 0, 500 ) )
 	{
 		if ( strstr ( strEsp8266_Fram_Record .Data_RX_BUF, "+CIPSTATUS:0," ) )
 			ucIdLinkStatus |= 0x01;
-		else 
+		else
 			ucIdLinkStatus &= ~ 0x01;
-		
+
 		if ( strstr ( strEsp8266_Fram_Record .Data_RX_BUF, "+CIPSTATUS:1," ) )
 			ucIdLinkStatus |= 0x02;
-		else 
+		else
 			ucIdLinkStatus &= ~ 0x02;
-		
+
 		if ( strstr ( strEsp8266_Fram_Record .Data_RX_BUF, "+CIPSTATUS:2," ) )
 			ucIdLinkStatus |= 0x04;
-		else 
+		else
 			ucIdLinkStatus &= ~ 0x04;
-		
+
 		if ( strstr ( strEsp8266_Fram_Record .Data_RX_BUF, "+CIPSTATUS:3," ) )
 			ucIdLinkStatus |= 0x08;
-		else 
+		else
 			ucIdLinkStatus &= ~ 0x08;
-		
+
 		if ( strstr ( strEsp8266_Fram_Record .Data_RX_BUF, "+CIPSTATUS:4," ) )
 			ucIdLinkStatus |= 0x10;
-		else 
-			ucIdLinkStatus &= ~ 0x10;	
+		else
+			ucIdLinkStatus &= ~ 0x10;
 
 	}
-	
+
 	return ucIdLinkStatus;
-	
+
 }
 
 
 /*
- * º¯ÊıÃû£ºESP8266_Inquire_ApIp
- * ÃèÊö  £º»ñÈ¡ F-ESP8266 µÄ AP IP
- * ÊäÈë  £ºpApIp£¬´æ·Å AP IP µÄÊı×éµÄÊ×µØÖ·
- *         ucArrayLength£¬´æ·Å AP IP µÄÊı×éµÄ³¤¶È
- * ·µ»Ø  : 0£¬»ñÈ¡Ê§°Ü
- *         1£¬»ñÈ¡³É¹¦
- * µ÷ÓÃ  £º±»Íâ²¿µ÷ÓÃ
+ * å‡½æ•°åï¼šESP8266_Inquire_ApIp
+ * æè¿°  ï¼šè·å– F-ESP8266 çš„ AP IP
+ * è¾“å…¥  ï¼špApIpï¼šå­˜æ”¾ AP IP çš„æ•°ç»„é¦–åœ°å€
+ *         ucArrayLengthï¼šå­˜æ”¾ AP IP çš„æ•°ç»„çš„é•¿åº¦
+ * è¾“å‡º  : 0ï¼šè·å–å¤±è´¥
+ *         1ï¼šè·å–æˆåŠŸ
+ * è°ƒç”¨  : è¢«å¤–éƒ¨è°ƒç”¨
  */
 uint8_t ESP8266_Inquire_ApIp ( char * pApIp, uint8_t ucArrayLength )
 {
 	char uc;
-	
+
 	char * pCh;
-	
-	
+
+
   ESP8266_Cmd ( "AT+CIFSR", "OK", 0, 500 );
-	
+
 	pCh = strstr ( strEsp8266_Fram_Record .Data_RX_BUF, "APIP,\"" );
-	
+
 	if ( pCh )
 		pCh += 6;
-	
+
 	else
 		return 0;
-	
+
 	for ( uc = 0; uc < ucArrayLength; uc ++ )
 	{
 		pApIp [ uc ] = * ( pCh + uc);
-		
+
 		if ( pApIp [ uc ] == '\"' )
 		{
 			pApIp [ uc ] = '\0';
 			break;
 		}
-		
+
 	}
-	
+
 	return 1;
-	
+
 }
 
 
 /*
- * º¯ÊıÃû£ºESP8266_UnvarnishSend
- * ÃèÊö  £ºÅäÖÃWF-ESP8266Ä£¿é½øÈëÍ¸´«·¢ËÍ
- * ÊäÈë  £ºÎŞ
- * ·µ»Ø  : 1£¬ÅäÖÃ³É¹¦
- *         0£¬ÅäÖÃÊ§°Ü
- * µ÷ÓÃ  £º±»Íâ²¿µ÷ÓÃ
+ * å‡½æ•°åï¼šESP8266_UnvarnishSend
+ * æè¿°  ï¼šä½¿WF-ESP8266æ¨¡å—è¿›å…¥é€ä¼ æ¨¡å¼
+ * è¾“å…¥  ï¼šæ— 
+ * è¾“å‡º  : 1ï¼šé…ç½®æˆåŠŸ
+ *         0ï¼šé…ç½®å¤±è´¥
+ * è°ƒç”¨  : è¢«å¤–éƒ¨è°ƒç”¨
  */
 bool ESP8266_UnvarnishSend ( void )
 {
 	if ( ! ESP8266_Cmd ( "AT+CIPMODE=1", "OK", 0, 500 ) )
 		return false;
-	
-	return 
+
+	return
 	  ESP8266_Cmd ( "AT+CIPSEND", "OK", ">", 500 );
-	
+
 }
 
 
 /*
- * º¯ÊıÃû£ºESP8266_ExitUnvarnishSend
- * ÃèÊö  £ºÅäÖÃWF-ESP8266Ä£¿éÍË³öÍ¸´«Ä£Ê½
- * ÊäÈë  £ºÎŞ
- * ·µ»Ø  : ÎŞ
- * µ÷ÓÃ  £º±»Íâ²¿µ÷ÓÃ
+ * å‡½æ•°åï¼šESP8266_ExitUnvarnishSend
+ * æè¿°  ï¼šä½¿WF-ESP8266æ¨¡å—é€€å‡ºé€ä¼ æ¨¡å¼
+ * è¾“å…¥  ï¼šæ— 
+ * è¾“å‡º  : æ— 
+ * è°ƒç”¨  : è¢«å¤–éƒ¨è°ƒç”¨
  */
 void ESP8266_ExitUnvarnishSend ( void )
 {
 	Delay_ms ( 1000 );
-	
+
 	macESP8266_Usart ( "+++" );
-	
-	Delay_ms ( 500 ); 
-	
+
+	Delay_ms ( 500 );
+
 }
 
 
 /*
- * º¯ÊıÃû£ºESP8266_SendString
- * ÃèÊö  £ºWF-ESP8266Ä£¿é·¢ËÍ×Ö·û´®
- * ÊäÈë  £ºenumEnUnvarnishTx£¬ÉùÃ÷ÊÇ·ñÒÑÊ¹ÄÜÁËÍ¸´«Ä£Ê½
- *       £ºpStr£¬Òª·¢ËÍµÄ×Ö·û´®
- *       £ºulStrLength£¬Òª·¢ËÍµÄ×Ö·û´®µÄ×Ö½ÚÊı
- *       £ºucId£¬ÄÄ¸öID·¢ËÍµÄ×Ö·û´®
- * ·µ»Ø  : 1£¬·¢ËÍ³É¹¦
- *         0£¬·¢ËÍÊ§°Ü
- * µ÷ÓÃ  £º±»Íâ²¿µ÷ÓÃ
+ * å‡½æ•°åï¼šESP8266_SendString
+ * æè¿°  ï¼šWF-ESP8266æ¨¡å—å‘é€å­—ç¬¦ä¸²
+ * è¾“å…¥  ï¼šenumEnUnvarnishTxï¼šé…ç½®æ˜¯å¦ä½¿èƒ½é€ä¼ æ¨¡å¼
+ *        pStrï¼šè¦å‘é€çš„å­—ç¬¦ä¸²
+ *        ulStrLengthï¼šè¦å‘é€çš„å­—ç¬¦ä¸²çš„å­—èŠ‚æ•°
+ *        ucIdï¼šä»å“ªä¸ªIDå‘é€çš„å­—ç¬¦ä¸²
+ * è¾“å‡º  : 1ï¼šå‘é€æˆåŠŸ
+ *         0ï¼šå‘é€å¤±è´¥
+ * è°ƒç”¨  : è¢«å¤–éƒ¨è°ƒç”¨
  */
 bool ESP8266_SendString ( FunctionalState enumEnUnvarnishTx, char * pStr, u32 ulStrLength, ENUM_ID_NO_TypeDef ucId )
 {
 	char cStr [20];
 	bool bRet = false;
-	
-		
+
+
 	if ( enumEnUnvarnishTx )
 	{
 		macESP8266_Usart ( "%s", pStr );
-		
+
 		bRet = true;
-		
+
 	}
 
 	else
@@ -584,39 +584,39 @@ bool ESP8266_SendString ( FunctionalState enumEnUnvarnishTx, char * pStr, u32 ul
 
 		else
 			sprintf ( cStr, "AT+CIPSEND=%d", ulStrLength + 2 );
-		
+
 		ESP8266_Cmd ( cStr, "> ", 0, 1000 );
 
 		bRet = ESP8266_Cmd ( pStr, "SEND OK", 0, 1000 );
   }
-	
+
 	return bRet;
 
 }
 
 
 /*
- * º¯ÊıÃû£ºESP8266_ReceiveString
- * ÃèÊö  £ºWF-ESP8266Ä£¿é½ÓÊÕ×Ö·û´®
- * ÊäÈë  £ºenumEnUnvarnishTx£¬ÉùÃ÷ÊÇ·ñÒÑÊ¹ÄÜÁËÍ¸´«Ä£Ê½
- * ·µ»Ø  : ½ÓÊÕµ½µÄ×Ö·û´®Ê×µØÖ·
- * µ÷ÓÃ  £º±»Íâ²¿µ÷ÓÃ
+ * å‡½æ•°åï¼šESP8266_ReceiveString
+ * æè¿°  ï¼šWF-ESP8266æ¨¡å—æ¥æ”¶å­—ç¬¦ä¸²
+ * è¾“å…¥  ï¼šenumEnUnvarnishTxï¼šé…ç½®æ˜¯å¦ä½¿èƒ½é€ä¼ æ¨¡å¼
+ * è¾“å‡º  : æ¥æ”¶åˆ°çš„å­—ç¬¦ä¸²é¦–åœ°å€
+ * è°ƒç”¨  : è¢«å¤–éƒ¨è°ƒç”¨
  */
 char * ESP8266_ReceiveString ( FunctionalState enumEnUnvarnishTx )
 {
 	char * pRecStr = 0;
-	
-	
+
+
 	strEsp8266_Fram_Record .InfBit .FramLength = 0;
 	strEsp8266_Fram_Record .InfBit .FramFinishFlag = 0;
-	
+
 	while ( ! strEsp8266_Fram_Record .InfBit .FramFinishFlag );
 	strEsp8266_Fram_Record .Data_RX_BUF [ strEsp8266_Fram_Record .InfBit .FramLength ] = '\0';
-	
+
 	if ( enumEnUnvarnishTx )
 		pRecStr = strEsp8266_Fram_Record .Data_RX_BUF;
-	
-	else 
+
+	else
 	{
 		if ( strstr ( strEsp8266_Fram_Record .Data_RX_BUF, "+IPD" ) )
 			pRecStr = strEsp8266_Fram_Record .Data_RX_BUF;
@@ -624,7 +624,7 @@ char * ESP8266_ReceiveString ( FunctionalState enumEnUnvarnishTx )
 	}
 
 	return pRecStr;
-	
+
 }
 
 

@@ -15,3 +15,4 @@
 ..\..\output\main.o: ..\..\User\Common\common.h
 ..\..\output\main.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdbool.h
 ..\..\output\main.o: ..\..\User\dwt_delay\core_delay.h
+..\..\output\main.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\string.h
