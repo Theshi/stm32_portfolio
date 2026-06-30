@@ -151,4 +151,4 @@
 .\objects\lv_port_disp_template.o: .\LVGL\src/extra/libs/freetype/lv_freetype.h
 .\objects\lv_port_disp_template.o: .\LVGL\src/extra/libs/rlottie/lv_rlottie.h
 .\objects\lv_port_disp_template.o: .\LVGL\src/extra/libs/ffmpeg/lv_ffmpeg.h
-.\objects\lv_port_disp_template.o: .\BSP\bsp_ili9341_lcd.h
+.\objects\lv_port_disp_template.o: .\Driver\ILI9341\bsp_ili9341_lcd.h

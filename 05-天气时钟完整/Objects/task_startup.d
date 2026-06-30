@@ -1,0 +1,14 @@
+.\objects\task_startup.o: Task\task_startup.c
+.\objects\task_startup.o: Task\task_startup.h
+.\objects\task_startup.o: .\FreeRTOS\src\FreeRTOS.h
+.\objects\task_startup.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stddef.h
+.\objects\task_startup.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdint.h
+.\objects\task_startup.o: .\User\FreeRTOSConfig.h
+.\objects\task_startup.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdio.h
+.\objects\task_startup.o: .\FreeRTOS\src\projdefs.h
+.\objects\task_startup.o: .\FreeRTOS\src\portable.h
+.\objects\task_startup.o: .\FreeRTOS\src\deprecated_definitions.h
+.\objects\task_startup.o: .\FreeRTOS\portable\portmacro.h
+.\objects\task_startup.o: .\FreeRTOS\src\mpu_wrappers.h
+.\objects\task_startup.o: .\FreeRTOS\src\task.h
+.\objects\task_startup.o: .\FreeRTOS\src\list.h

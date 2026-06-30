@@ -1,5 +1,5 @@
-.\objects\bsp_ili9341_lcd.o: BSP\bsp_ili9341_lcd.c
-.\objects\bsp_ili9341_lcd.o: BSP\bsp_ili9341_lcd.h
+.\objects\bsp_ili9341_lcd.o: Driver\ILI9341\bsp_ili9341_lcd.c
+.\objects\bsp_ili9341_lcd.o: Driver\ILI9341\bsp_ili9341_lcd.h
 .\objects\bsp_ili9341_lcd.o: .\Start\stm32f10x.h
 .\objects\bsp_ili9341_lcd.o: .\Start\core_cm3.h
 .\objects\bsp_ili9341_lcd.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdint.h

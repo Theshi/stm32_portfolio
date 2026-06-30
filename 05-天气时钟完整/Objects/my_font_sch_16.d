@@ -122,7 +122,7 @@
 .\objects\my_font_sch_16.o: .\LVGL\src/extra/libs/freetype/lv_freetype.h
 .\objects\my_font_sch_16.o: .\LVGL\src/extra/libs/rlottie/lv_rlottie.h
 .\objects\my_font_sch_16.o: .\LVGL\src/extra/libs/ffmpeg/lv_ffmpeg.h
-.\objects\my_font_sch_16.o: .\Driver\W25Q64.h
+.\objects\my_font_sch_16.o: .\Driver\W25Q64\W25Q64.h
 .\objects\my_font_sch_16.o: .\Start\stm32f10x.h
 .\objects\my_font_sch_16.o: .\Start\core_cm3.h
 .\objects\my_font_sch_16.o: .\Start\system_stm32f10x.h

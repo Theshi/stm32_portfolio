@@ -123,7 +123,7 @@
 .\objects\lv_port_indev_template.o: .\LVGL\src/extra/libs/freetype/lv_freetype.h
 .\objects\lv_port_indev_template.o: .\LVGL\src/extra/libs/rlottie/lv_rlottie.h
 .\objects\lv_port_indev_template.o: .\LVGL\src/extra/libs/ffmpeg/lv_ffmpeg.h
-.\objects\lv_port_indev_template.o: .\BSP\bsp_xpt2046_lcd.h
+.\objects\lv_port_indev_template.o: .\Driver\XPT2046\bsp_xpt2046_lcd.h
 .\objects\lv_port_indev_template.o: .\Start\stm32f10x.h
 .\objects\lv_port_indev_template.o: .\Start\core_cm3.h
 .\objects\lv_port_indev_template.o: .\Start\system_stm32f10x.h

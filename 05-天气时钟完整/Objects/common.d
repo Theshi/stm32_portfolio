@@ -1,5 +1,5 @@
-.\objects\common.o: BSP\common.c
-.\objects\common.o: BSP\common.h
+.\objects\common.o: Service\common.c
+.\objects\common.o: Service\common.h
 .\objects\common.o: .\Start\stm32f10x.h
 .\objects\common.o: .\Start\core_cm3.h
 .\objects\common.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdint.h

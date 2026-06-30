@@ -337,7 +337,7 @@
               <MiscControls>--no-multibyte-chars</MiscControls>
               <Define>USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>.\Start;.\User;.\Library;.\System;.\FreeRTOS\portable;.\FreeRTOS\src;.\Hardware;.\Task;.\Hardware\Mpu6050;.\BSP;.\LVGL;.\LVGL\port;.\LVGL\src;.\UI;.\UI\IMG;.\Driver;.\UI\Font_SCh_16</IncludePath>
+              <IncludePath>.\Start;.\User;.\Library;.\System;.\FreeRTOS\portable;.\FreeRTOS\src;.\BSP;.\LVGL;.\LVGL\port;.\LVGL\src;.\UI;.\UI\IMG;.\Service;.\Driver\ESP8266;.\Driver\ILI9341;.\Driver\XPT2046;.\Driver\W25Q64;.\UI\Font_SCh_16;.\Task</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -2352,16 +2352,6 @@
           <GroupName>System</GroupName>
           <Files>
             <File>
-              <FileName>SysTick.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\System\SysTick.c</FilePath>
-            </File>
-            <File>
-              <FileName>SysTick.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\System\SysTick.h</FilePath>
-            </File>
-            <File>
               <FileName>Delay.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\System\Delay.c</FilePath>
@@ -2381,41 +2371,21 @@
               <FileType>5</FileType>
               <FilePath>.\System\MyRTC.h</FilePath>
             </File>
+            <File>
+              <FileName>SysTick.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\System\SysTick.c</FilePath>
+            </File>
+            <File>
+              <FileName>SysTick.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\System\SysTick.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
           <GroupName>BSP</GroupName>
           <Files>
-            <File>
-              <FileName>bsp_ili9341_lcd.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\BSP\bsp_ili9341_lcd.c</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_ili9341_lcd.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\BSP\bsp_ili9341_lcd.h</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_usart.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\BSP\bsp_usart.c</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_usart.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\BSP\bsp_usart.h</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_xpt2046_lcd.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\BSP\bsp_xpt2046_lcd.c</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_xpt2046_lcd.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\BSP\bsp_xpt2046_lcd.h</FilePath>
-            </File>
             <File>
               <FileName>bsp_spi.c</FileName>
               <FileType>1</FileType>
@@ -2427,24 +2397,14 @@
               <FilePath>.\BSP\bsp_spi.h</FilePath>
             </File>
             <File>
-              <FileName>bsp_esp8266.c</FileName>
+              <FileName>bsp_usart.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\BSP\bsp_esp8266.c</FilePath>
+              <FilePath>.\BSP\bsp_usart.c</FilePath>
             </File>
             <File>
-              <FileName>bsp_esp8266.h</FileName>
+              <FileName>bsp_usart.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\BSP\bsp_esp8266.h</FilePath>
-            </File>
-            <File>
-              <FileName>common.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\BSP\common.c</FilePath>
-            </File>
-            <File>
-              <FileName>common.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\BSP\common.h</FilePath>
+              <FilePath>.\BSP\bsp_usart.h</FilePath>
             </File>
             <File>
               <FileName>core_delay.c</FileName>
@@ -2464,18 +2424,53 @@
             <File>
               <FileName>W25Q64.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Drier\W25Q64.c</FilePath>
+              <FilePath>.\Driver\W25Q64\W25Q64.c</FilePath>
             </File>
             <File>
               <FileName>W25Q64.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\Driver\W25Q64.h</FilePath>
+              <FilePath>.\Driver\W25Q64\W25Q64.h</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_esp8266.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\ESP8266\bsp_esp8266.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_esp8266.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\ESP8266\bsp_esp8266.h</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_ili9341_lcd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\ILI9341\bsp_ili9341_lcd.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_ili9341_lcd.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\ILI9341\bsp_ili9341_lcd.h</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_xpt2046_lcd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\XPT2046\bsp_xpt2046_lcd.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_xpt2046_lcd.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\XPT2046\bsp_xpt2046_lcd.h</FilePath>
             </File>
           </Files>
         </Group>
         <Group>
           <GroupName>User</GroupName>
           <Files>
+            <File>
+              <FileName>FreeRTOSConfig.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\FreeRTOSConfig.h</FilePath>
+            </File>
             <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
@@ -2495,11 +2490,6 @@
               <FileName>stm32f10x_it.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\User\stm32f10x_it.h</FilePath>
-            </File>
-            <File>
-              <FileName>FreeRTOSConfig.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\User\FreeRTOSConfig.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -2555,6 +2545,76 @@
               <FileName>GitHub.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\UI\IMG\GitHub.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Service</GroupName>
+          <Files>
+            <File>
+              <FileName>common.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Service\common.c</FilePath>
+            </File>
+            <File>
+              <FileName>common.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Service\common.h</FilePath>
+            </File>
+            <File>
+              <FileName>http_client.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Service\http_client.c</FilePath>
+            </File>
+            <File>
+              <FileName>http_client.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Service\http_client.h</FilePath>
+            </File>
+            <File>
+              <FileName>http_utils.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Service\http_utils.c</FilePath>
+            </File>
+            <File>
+              <FileName>http_utils.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Service\http_utils.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Task</GroupName>
+          <Files>
+            <File>
+              <FileName>task_boot.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Task\task_boot.c</FilePath>
+            </File>
+            <File>
+              <FileName>task_boot.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Task\task_boot.h</FilePath>
+            </File>
+            <File>
+              <FileName>task_http.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Task\task_http.c</FilePath>
+            </File>
+            <File>
+              <FileName>task_http.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Task\task_http.h</FilePath>
+            </File>
+            <File>
+              <FileName>task_startup.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Task\task_startup.c</FilePath>
+            </File>
+            <File>
+              <FileName>task_startup.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Task\task_startup.h</FilePath>
             </File>
           </Files>
         </Group>

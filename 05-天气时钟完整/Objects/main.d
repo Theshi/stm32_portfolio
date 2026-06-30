@@ -29,11 +29,10 @@
 .\objects\main.o: .\Library\stm32f10x_wwdg.h
 .\objects\main.o: .\Library\misc.h
 .\objects\main.o: .\System\SysTick.h
-.\objects\main.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\string.h
-.\objects\main.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdio.h
 .\objects\main.o: .\FreeRTOS\src\FreeRTOS.h
 .\objects\main.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stddef.h
 .\objects\main.o: .\User\FreeRTOSConfig.h
+.\objects\main.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdio.h
 .\objects\main.o: .\FreeRTOS\src\projdefs.h
 .\objects\main.o: .\FreeRTOS\src\portable.h
 .\objects\main.o: .\FreeRTOS\src\deprecated_definitions.h
@@ -42,13 +41,12 @@
 .\objects\main.o: .\FreeRTOS\src\task.h
 .\objects\main.o: .\FreeRTOS\src\list.h
 .\objects\main.o: .\BSP\bsp_usart.h
-.\objects\main.o: .\BSP\bsp_esp8266.h
-.\objects\main.o: .\BSP\common.h
+.\objects\main.o: .\Driver\ESP8266\bsp_esp8266.h
+.\objects\main.o: .\Service\common.h
 .\objects\main.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdbool.h
-.\objects\main.o: .\BSP\bsp_ili9341_lcd.h
-.\objects\main.o: .\Driver\W25Q64.h
-.\objects\main.o: .\BSP\bsp_spi.h
 .\objects\main.o: .\BSP\core_delay.h
+.\objects\main.o: .\Driver\W25Q64\W25Q64.h
+.\objects\main.o: .\BSP\bsp_spi.h
 .\objects\main.o: .\UI\UI_API.h
 .\objects\main.o: .\LVGL\lvgl.h
 .\objects\main.o: .\LVGL\src/misc/lv_log.h
@@ -59,6 +57,7 @@
 .\objects\main.o: .\LVGL\src/misc/lv_timer.h
 .\objects\main.o: .\LVGL\src/misc/lv_math.h
 .\objects\main.o: .\LVGL\src/misc/lv_mem.h
+.\objects\main.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\string.h
 .\objects\main.o: .\LVGL\src/misc/lv_async.h
 .\objects\main.o: .\LVGL\src/misc/lv_anim_timeline.h
 .\objects\main.o: .\LVGL\src/misc/lv_anim.h
@@ -169,3 +168,6 @@
 .\objects\main.o: .\LVGL\src/extra/libs/freetype/lv_freetype.h
 .\objects\main.o: .\LVGL\src/extra/libs/rlottie/lv_rlottie.h
 .\objects\main.o: .\LVGL\src/extra/libs/ffmpeg/lv_ffmpeg.h
+.\objects\main.o: .\Task\task_boot.h
+.\objects\main.o: .\Task\task_http.h
+.\objects\main.o: .\Task\task_startup.h

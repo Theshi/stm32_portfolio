@@ -1,5 +1,5 @@
-.\objects\w25q64.o: Drier\W25Q64.c
-.\objects\w25q64.o: .\Driver\W25Q64.h
+.\objects\w25q64.o: Driver\W25Q64\W25Q64.c
+.\objects\w25q64.o: Driver\W25Q64\W25Q64.h
 .\objects\w25q64.o: .\Start\stm32f10x.h
 .\objects\w25q64.o: .\Start\core_cm3.h
 .\objects\w25q64.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdint.h

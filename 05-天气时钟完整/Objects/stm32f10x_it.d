@@ -41,6 +41,6 @@
 .\objects\stm32f10x_it.o: .\FreeRTOS\src\task.h
 .\objects\stm32f10x_it.o: .\FreeRTOS\src\list.h
 .\objects\stm32f10x_it.o: .\BSP\bsp_usart.h
-.\objects\stm32f10x_it.o: .\BSP\bsp_esp8266.h
-.\objects\stm32f10x_it.o: .\BSP\common.h
+.\objects\stm32f10x_it.o: .\Driver\ESP8266\bsp_esp8266.h
+.\objects\stm32f10x_it.o: .\Service\common.h
 .\objects\stm32f10x_it.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdbool.h

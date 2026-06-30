@@ -1,5 +1,5 @@
-.\objects\bsp_xpt2046_lcd.o: BSP\bsp_xpt2046_lcd.c
-.\objects\bsp_xpt2046_lcd.o: BSP\bsp_xpt2046_lcd.h
+.\objects\bsp_xpt2046_lcd.o: Driver\XPT2046\bsp_xpt2046_lcd.c
+.\objects\bsp_xpt2046_lcd.o: Driver\XPT2046\bsp_xpt2046_lcd.h
 .\objects\bsp_xpt2046_lcd.o: .\Start\stm32f10x.h
 .\objects\bsp_xpt2046_lcd.o: .\Start\core_cm3.h
 .\objects\bsp_xpt2046_lcd.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdint.h
@@ -29,6 +29,6 @@
 .\objects\bsp_xpt2046_lcd.o: .\Library\stm32f10x_usart.h
 .\objects\bsp_xpt2046_lcd.o: .\Library\stm32f10x_wwdg.h
 .\objects\bsp_xpt2046_lcd.o: .\Library\misc.h
-.\objects\bsp_xpt2046_lcd.o: BSP\bsp_ili9341_lcd.h
+.\objects\bsp_xpt2046_lcd.o: .\Driver\ILI9341\bsp_ili9341_lcd.h
 .\objects\bsp_xpt2046_lcd.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdio.h
 .\objects\bsp_xpt2046_lcd.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\string.h

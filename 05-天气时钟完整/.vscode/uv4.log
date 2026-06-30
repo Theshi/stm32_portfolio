@@ -1,2 +1,4 @@
-Load "d:\\STM32-PROJECT-exercise\\智能天气时钟\\04_UI完整\\Objects\\project.axf" 
-Erase Done.Programming Done.Verify OK.Flash Load finished at 23:36:00
+*** Using Compiler 'V5.06 update 5 (build 528)', folder: 'D:\Qianrushi\ARM\ARMCC\Bin'
+Build target 'Target 1'
+".\Objects\project.axf" - 0 Error(s), 0 Warning(s).
+Build Time Elapsed:  00:00:11

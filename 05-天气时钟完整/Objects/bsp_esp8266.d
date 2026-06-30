@@ -1,5 +1,5 @@
-.\objects\bsp_esp8266.o: BSP\bsp_esp8266.c
-.\objects\bsp_esp8266.o: BSP\bsp_esp8266.h
+.\objects\bsp_esp8266.o: Driver\ESP8266\bsp_esp8266.c
+.\objects\bsp_esp8266.o: Driver\ESP8266\bsp_esp8266.h
 .\objects\bsp_esp8266.o: .\Start\stm32f10x.h
 .\objects\bsp_esp8266.o: .\Start\core_cm3.h
 .\objects\bsp_esp8266.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdint.h
@@ -29,8 +29,8 @@
 .\objects\bsp_esp8266.o: .\Library\stm32f10x_usart.h
 .\objects\bsp_esp8266.o: .\Library\stm32f10x_wwdg.h
 .\objects\bsp_esp8266.o: .\Library\misc.h
-.\objects\bsp_esp8266.o: BSP\common.h
+.\objects\bsp_esp8266.o: .\Service\common.h
 .\objects\bsp_esp8266.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdio.h
 .\objects\bsp_esp8266.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdbool.h
 .\objects\bsp_esp8266.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\string.h
-.\objects\bsp_esp8266.o: BSP\core_delay.h
+.\objects\bsp_esp8266.o: .\BSP\core_delay.h
