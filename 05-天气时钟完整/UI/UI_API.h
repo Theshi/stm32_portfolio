@@ -19,13 +19,15 @@
  * Boot_Task 每完成一个自检项，就通知 LVGL_Task 更新 UI
  * ======================================================================== */
 typedef enum {
-    BOOT_START      = 0x01,   /* 自检开始 */
-    BOOT_W25Q64_OK  = 0x02,   /* W25Q64 字库就绪 */
-    BOOT_ESP_OK     = 0x03,   /* ESP8266 就绪（预留） */
-    BOOT_RTC_OK     = 0x04,   /* RTC 就绪（预留）   */
-    BOOT_DONE       = 0xFF    /* 全部自检完成 */
+    BOOT_START        = 0x01,  // → 0%
+    BOOT_W25Q64_INIT  = 0x02,  // → 10%  开始检测字库
+    BOOT_W25Q64_DONE  = 0x03,  // → 25%  字库就绪
+    BOOT_ESP_WAIT     = 0x04,  // → 30%  等待 ESP8266 上线
+    BOOT_ESP_AT_OK    = 0x05,  // → 55%  AT 测试通过
+    BOOT_RTC_OK       = 0x06,  // → 75%  RTC 初始化完成 (把空位补上)
+    BOOT_CONNECT_WIFI = 0x07,  // → 85%  开始连 Wi-Fi
+    BOOT_DONE         = 0xFF,  // → 100% 启动完成
 } boot_state_t;
-
 
 /* ---- 外部字库声明 ---- */
 extern bool my_font_SCH_16_check_exists(void);
@@ -68,6 +70,7 @@ void      Boot_Finish(lv_obj_t *boot_screen, lv_obj_t *main_screen);
  * Main Screen API（定义在 UI_Main.c）
  * ======================================================================== */
 void LVGL_CreateMainScreen(lv_obj_t *screen);
+void LVGL_RefreshMainScreen(lv_timer_t *timer);
 
 
 /* ========================================================================

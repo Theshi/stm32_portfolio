@@ -1,4 +1,5 @@
 .\objects\myrtc.o: System\MyRTC.c
+.\objects\myrtc.o: System\MyRTC.h
 .\objects\myrtc.o: .\Start\stm32f10x.h
 .\objects\myrtc.o: .\Start\core_cm3.h
 .\objects\myrtc.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdint.h

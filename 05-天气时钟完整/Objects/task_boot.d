@@ -166,3 +166,4 @@
 .\objects\task_boot.o: .\BSP\bsp_spi.h
 .\objects\task_boot.o: .\Driver\ESP8266\bsp_esp8266.h
 .\objects\task_boot.o: .\Service\common.h
+.\objects\task_boot.o: .\System\MyRTC.h

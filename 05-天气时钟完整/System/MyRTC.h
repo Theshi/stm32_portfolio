@@ -10,8 +10,8 @@ typedef struct
     uint8_t  w_month;   /* 月 1~12 */
     uint8_t  w_date;    /* 日 1~31 */
     uint8_t  w_hour;    /* 时 0~23 */
-    uint8_t  w_minute;  /* 分 0~59 */
-    uint8_t  w_second;  /* 秒 0~59 */
+    uint8_t  w_min;  /* 分 0~59 */
+    uint8_t  w_sec;  /* 秒 0~59 */
     uint8_t  w_week;    /* 星期 0:星期日 ~ 6:星期六 */
 } RTC_TimeTypeDef;
 

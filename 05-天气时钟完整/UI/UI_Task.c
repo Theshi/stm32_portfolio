@@ -49,28 +49,38 @@ void LvglTask(void *p)
         /* 非阻塞接收 Boot_Task 通知 */
         if (xTaskNotifyWait(0, 0xFFFFFFFF, &notify_state, 0) == pdTRUE)
         {
-            switch (notify_state)
+            switch ((boot_state_t)notify_state)
             {
                 case BOOT_START:
                     BootLog_Add("[BOOT] 开始自检...");
                     BootProgress_Set(0);
                     break;
+                case BOOT_W25Q64_INIT:
+                    BootLog_Add("[BOOT] 检测字库...");
+                    BootProgress_Set(10);
+                    break;
 
-                case BOOT_W25Q64_OK:
+                case BOOT_W25Q64_DONE:
                     BootLog_Add("[OK] W25Q64");
                     BootProgress_Set(25);
                     break;
-
-                case BOOT_ESP_OK:
-                    BootLog_Add("[OK] ESP8266");
-                    BootProgress_Set(50);
+                case BOOT_ESP_WAIT:
+                    BootLog_Add("[BOOT] 等待 ESP8266 上线...");
+                    BootProgress_Set(30);
                     break;
-
+                case BOOT_ESP_AT_OK:
+                    BootLog_Add("[OK] ESP8266");
+                    BootProgress_Set(55);
+                    break;
+                
                 case BOOT_RTC_OK:
                     BootLog_Add("[OK] RTC");
                     BootProgress_Set(75);
                     break;
-
+                case BOOT_CONNECT_WIFI:
+                    BootLog_Add("[BOOT] 连接 Wi-Fi...");
+                    BootProgress_Set(85);
+                    break;
                 case BOOT_DONE:
                     BootLog_Add("[OK] 自检完成");
                     BootProgress_Set(100);

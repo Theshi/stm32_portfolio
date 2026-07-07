@@ -14,6 +14,7 @@
 #include "UI_API.h"
 #include "W25Q64.h"
 #include "bsp_esp8266.h"
+#include "MyRTC.h"
 #include <stdio.h>
 
 TaskHandle_t BootTask_Handle;
@@ -24,10 +25,11 @@ void Boot_Task(void *p)
     xTaskNotify(LVGL_Task_Handle, BOOT_START, eSetValueWithOverwrite);
 
     /* ---- 自检1: W25Q64 字库 ---- */
+    xTaskNotify(LVGL_Task_Handle, BOOT_W25Q64_INIT, eSetValueWithOverwrite);
     if (!my_font_SCH_16_check_exists())
     {
         printf("Boot: Font not found, burning...\n");
-        my_font_SCH_16_init();
+        my_font_SCH_16_init();	
         my_font_SCH_16_verify();
         printf("Boot: Font burn done.\n");
     }
@@ -35,16 +37,40 @@ void Boot_Task(void *p)
     {
         printf("Boot: Font exists, skip.\n");
     }
-    xTaskNotify(LVGL_Task_Handle, BOOT_W25Q64_OK, eSetValueWithOverwrite);
+    xTaskNotify(LVGL_Task_Handle, BOOT_W25Q64_DONE, eSetValueWithOverwrite);
+
+    vTaskDelay(pdMS_TO_TICKS(50));//延时一下子
 
     /* ---- 自检2: ESP8266 ---- */
+    xTaskNotify(LVGL_Task_Handle,BOOT_ESP_WAIT,eSetValueWithOverwrite);
     printf("Boot: Testing ESP8266...\n");
+    vTaskDelay(pdMS_TO_TICKS(500));//等待上电
     ESP8266_AT_Test();
     printf("Boot: ESP8266 AT OK.\n");
-    xTaskNotify(LVGL_Task_Handle, BOOT_ESP_OK, eSetValueWithOverwrite);
+    xTaskNotify(LVGL_Task_Handle, BOOT_ESP_AT_OK, eSetValueWithOverwrite);
+	
+    vTaskDelay(pdMS_TO_TICKS(50));//延时一下子
 
+    /* ---- 自检RTC显示 ---- */
+    printf("Boot: Testing RTC...\n");
+    //RTC检测函数
+    MyRTC_Init();
+    vTaskDelay(pdMS_TO_TICKS(500));//等待上电
+    xTaskNotify(LVGL_Task_Handle,BOOT_RTC_OK,eSetValueWithOverwrite);
+   
+    
+
+    /* ---- 自检Wi-Fi ---- */
+    vTaskDelay(pdMS_TO_TICKS(500));
+    xTaskNotify(LVGL_Task_Handle,BOOT_CONNECT_WIFI,eSetValueWithOverwrite);
+    printf("Boot: Testing WIFI...\n");
+    //WIFI检测函数
+   
+
+    
     /* ---- 自检完成 ---- */
+    printf("Boot: 自检结束\n");
     xTaskNotify(LVGL_Task_Handle, BOOT_DONE, eSetValueWithOverwrite);
-
+    vTaskDelay(pdMS_TO_TICKS(500));//等待一下再进入主界面
     vTaskDelete(NULL);
 }

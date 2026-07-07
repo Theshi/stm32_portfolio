@@ -46,7 +46,9 @@ int main(void)
     USART_Config();
     printf("USART OK.\n");
 
-    /* ---- 2. DWT 延时初始化 (ESP8266 驱动依赖) ---- */
+    /* ---- 2. DWT 延时初始化 (替代 SysTick，避免干扰 FreeRTOS 系统节拍) ----
+ * ESP8266、W25Q64 等驱动中的 Delay_ms() 均基于 DWT 实现
+ */
     CPU_TS_TmrInit();
 
     /* ---- 3. W25Q64 Flash ---- */

@@ -52,7 +52,7 @@ lv_obj_t *Boot_UI_Create(void)
     lv_obj_t *label_Zen = lv_label_create(scr);
     lv_label_set_text(label_Zen, "ZenStones");
     lv_obj_set_style_text_font(label_Zen, &lv_font_montserrat_48, LV_PART_MAIN);
-    lv_obj_set_pos(label_Zen, 80, 30);
+    lv_obj_set_pos(label_Zen, 50, 30);
 
     /* ---- BOOTing 提示 ---- */
     lv_obj_t *label_load = lv_label_create(scr);
