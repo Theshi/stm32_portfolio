@@ -1,2 +1,8 @@
-Load "d:\\STM32-PROJECT-exercise\\智能天气时钟\\05-天气时钟完整\\Objects\\project.axf" 
-Erase Done.Programming Done.Verify OK.Flash Load finished at 23:51:56
+*** Using Compiler 'V5.06 update 5 (build 528)', folder: 'D:\Qianrushi\ARM\ARMCC\Bin'
+Build target 'Target 1'
+compiling bsp_dht11.c...
+linking...
+Program Size: Code=211008 RO-data=128944 RW-data=984 ZI-data=57392  
+FromELF: creating hex file...
+".\Objects\project.axf" - 0 Error(s), 0 Warning(s).
+Build Time Elapsed:  00:00:11

@@ -209,6 +209,7 @@
 ".\objects\bsp_spi.o"
 ".\objects\bsp_usart.o"
 ".\objects\core_delay.o"
+".\objects\bsp_dht11.o"
 ".\objects\w25q64.o"
 ".\objects\bsp_esp8266.o"
 ".\objects\bsp_ili9341_lcd.o"
