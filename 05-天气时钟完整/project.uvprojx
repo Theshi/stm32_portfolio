@@ -2512,9 +2512,9 @@
               <FilePath>.\UI\UI_API.h</FilePath>
             </File>
             <File>
-              <FileName>UI_Task.c</FileName>
+              <FileName>task_lvglUI.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\UI\UI_Task.c</FilePath>
+              <FilePath>.\Task\task_lvglUI.c</FilePath>
             </File>
             <File>
               <FileName>UI_Main.c</FileName>

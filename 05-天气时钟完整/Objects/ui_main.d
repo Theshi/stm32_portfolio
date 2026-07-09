@@ -162,3 +162,4 @@
 .\objects\ui_main.o: .\Library\stm32f10x_usart.h
 .\objects\ui_main.o: .\Library\stm32f10x_wwdg.h
 .\objects\ui_main.o: .\Library\misc.h
+.\objects\ui_main.o: .\BSP\bsp_dht11.h

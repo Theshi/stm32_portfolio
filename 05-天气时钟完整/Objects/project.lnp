@@ -216,7 +216,7 @@
 ".\objects\bsp_xpt2046_lcd.o"
 ".\objects\main.o"
 ".\objects\stm32f10x_it.o"
-".\objects\ui_task.o"
+".\objects\task_lvglui.o"
 ".\objects\ui_main.o"
 ".\objects\ui_boot.o"
 ".\objects\ui_wifi.o"

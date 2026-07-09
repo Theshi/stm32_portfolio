@@ -3,7 +3,7 @@
 
 #include "stm32f10x.h"
 //DHT11的数据读取结构体
-typedef struct
+ typedef struct
 {
     uint8_t humi_int;  //湿度整数部分
     uint8_t humi_deci;  //湿度小数部分

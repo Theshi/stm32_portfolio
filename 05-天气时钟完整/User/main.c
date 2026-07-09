@@ -7,7 +7,7 @@
  *   2. 创建所有 FreeRTOS 任务 → 启动调度器
  *
  * 各任务实现在独立文件中:
- *   UI_Task       → UI/UI_Task.c     (LVGL 渲染)
+ *   LvglTask      → Task/task_lvglUI.c (LVGL 渲染)
  *   Boot_Task     → Task/task_boot.c (上电自检)
  *   HTTP_Task     → Task/task_http.c (串口透传 + HTTP)
  *   StartUpTask   → Task/task_startup.c (心跳)

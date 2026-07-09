@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * UI_Task.c —— LVGL 任务入口（所有 LVGL API 调用的唯一线程）
+ * task_lvglUI.c —— LVGL 任务入口（所有 LVGL API 调用的唯一线程）
  *
  * 职责：
  *   1. 初始化 LVGL + 显示屏 + 触摸屏
@@ -72,7 +72,7 @@ void LvglTask(void *p)
                     BootLog_Add("[OK] ESP8266");
                     BootProgress_Set(55);
                     break;
-                
+
                 case BOOT_RTC_OK:
                     BootLog_Add("[OK] RTC");
                     BootProgress_Set(75);
