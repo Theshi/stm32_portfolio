@@ -5292,8 +5292,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>.\UI\UI_Task.c</PathWithFileName>
-      <FilenameWithoutPath>UI_Task.c</FilenameWithoutPath>
+      <PathWithFileName>.\Task\task_lvglUI.c</PathWithFileName>
+      <FilenameWithoutPath>task_lvglUI.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>

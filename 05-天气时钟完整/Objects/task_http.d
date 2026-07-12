@@ -12,6 +12,8 @@
 .\objects\task_http.o: .\FreeRTOS\src\mpu_wrappers.h
 .\objects\task_http.o: .\FreeRTOS\src\task.h
 .\objects\task_http.o: .\FreeRTOS\src\list.h
+.\objects\task_http.o: Task\task_boot.h
+.\objects\task_http.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdbool.h
 .\objects\task_http.o: .\BSP\bsp_usart.h
 .\objects\task_http.o: .\Start\stm32f10x.h
 .\objects\task_http.o: .\Start\core_cm3.h
@@ -43,7 +45,6 @@
 .\objects\task_http.o: .\Library\misc.h
 .\objects\task_http.o: .\Driver\ESP8266\bsp_esp8266.h
 .\objects\task_http.o: .\Service\common.h
-.\objects\task_http.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdbool.h
 .\objects\task_http.o: .\Service\http_client.h
 .\objects\task_http.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\string.h
 .\objects\task_http.o: .\Service\http_utils.h

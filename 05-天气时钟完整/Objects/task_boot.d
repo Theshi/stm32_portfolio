@@ -12,6 +12,8 @@
 .\objects\task_boot.o: .\FreeRTOS\src\mpu_wrappers.h
 .\objects\task_boot.o: .\FreeRTOS\src\task.h
 .\objects\task_boot.o: .\FreeRTOS\src\list.h
+.\objects\task_boot.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdbool.h
+.\objects\task_boot.o: Task\task_http.h
 .\objects\task_boot.o: .\UI\UI_API.h
 .\objects\task_boot.o: .\LVGL\lvgl.h
 .\objects\task_boot.o: .\LVGL\src/misc/lv_log.h
@@ -20,7 +22,6 @@
 .\objects\task_boot.o: .\LVGL\lv_conf.h
 .\objects\task_boot.o: .\LVGL\src/misc/lv_types.h
 .\objects\task_boot.o: .\LVGL\src/misc/lv_timer.h
-.\objects\task_boot.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdbool.h
 .\objects\task_boot.o: .\LVGL\src/misc/lv_math.h
 .\objects\task_boot.o: .\LVGL\src/misc/lv_mem.h
 .\objects\task_boot.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\string.h

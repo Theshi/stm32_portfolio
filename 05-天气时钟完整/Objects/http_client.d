@@ -46,3 +46,6 @@
 .\objects\http_client.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdbool.h
 .\objects\http_client.o: .\BSP\bsp_usart.h
 .\objects\http_client.o: Service\http_utils.h
+.\objects\http_client.o: .\System\MyRTC.h
+.\objects\http_client.o: .\Task\task_http.h
+.\objects\http_client.o: D:\Qianrushi\ARM\ARMCC\Bin\..\include\stdlib.h

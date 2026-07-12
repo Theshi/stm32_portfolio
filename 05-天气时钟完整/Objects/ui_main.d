@@ -163,3 +163,5 @@
 .\objects\ui_main.o: .\Library\stm32f10x_wwdg.h
 .\objects\ui_main.o: .\Library\misc.h
 .\objects\ui_main.o: .\BSP\bsp_dht11.h
+.\objects\ui_main.o: .\Task\task_boot.h
+.\objects\ui_main.o: .\Task\task_http.h

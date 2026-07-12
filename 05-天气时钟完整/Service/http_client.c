@@ -12,6 +12,9 @@
  * ============================================================================
  */
 #include "http_client.h"
+#include "MyRTC.h"
+#include "task_http.h"    /* WeatherData, g_weather */
+#include <stdlib.h>       /* atoi */
 
 
 /* ==================== 任务配置实例 ==================== */
@@ -26,11 +29,11 @@ static const HTTP_TaskConfig task_time_cfg = {
     "\r\n"
 };
 
-/* 天气: wttr.in (免费HTTP, 无需API Key) */
+/* 天气: wttr.in 紧凑格式 → 返回 "temp|humidity|weather_desc"，仅几十字节 */
 static const HTTP_TaskConfig task_weather_cfg = {
     "wttr.in",
     80,
-    "GET /Xi'an?format=j1 HTTP/1.1\r\n"
+    "GET /Xi'an?format=%25t%7C%25h%7C%25C HTTP/1.1\r\n"
     "Host: wttr.in\r\n"
     "User-Agent: curl\r\n"
     "Connection: close\r\n"
@@ -63,8 +66,9 @@ static void Parse_Time_Response(void)
 {
     const char *p;
     char buf[64];
-    char wday[4], mon[4];
+    char mon[4];
     int  day, year, hour, min, sec;
+    int  month;
 
     p = strstr(http_resp_buf, "Date: ");
     if (p)
@@ -77,23 +81,49 @@ static void Parse_Time_Response(void)
             buf[i] = '\0';
         }
 
-        if (sscanf(buf, "%3s %2d %3s %4d %2d:%2d:%2d",
-                   wday, &day, mon, &year, &hour, &min, &sec) == 6)
+        /*
+         * Date header 格式: "Sun, 12 Jul 2026 15:05:24 GMT"
+         * %*[^,] 跳过星期几（如 "Sun"），然后跳过 ", "，再解析数字
+         */
+        if (sscanf(buf, "%*[^,], %d %3s %d %d:%d:%d",
+                   &day, mon, &year, &hour, &min, &sec) == 6)
         {
             hour += 8;  /* GMT+8 = Beijing */
             if (hour >= 24) { hour -= 24; day += 1; }
 
+            /* 月份缩写 → 数字 */
+            if      (!strcmp(mon,"Jan")) month=1;
+            else if (!strcmp(mon,"Feb")) month=2;
+            else if (!strcmp(mon,"Mar")) month=3;
+            else if (!strcmp(mon,"Apr")) month=4;
+            else if (!strcmp(mon,"May")) month=5;
+            else if (!strcmp(mon,"Jun")) month=6;
+            else if (!strcmp(mon,"Jul")) month=7;
+            else if (!strcmp(mon,"Aug")) month=8;
+            else if (!strcmp(mon,"Sep")) month=9;
+            else if (!strcmp(mon,"Oct")) month=10;
+            else if (!strcmp(mon,"Nov")) month=11;
+            else                          month=12;
+
             printf("\r\n=========== Network Time ===========\r\n");
             printf("  GMT    : %s\r\n", buf);
             printf("  Beijing: %04d-%02d-%02d %02d:%02d:%02d\r\n",
-                   year,
-                   (!strcmp(mon,"Jan"))?1:(!strcmp(mon,"Feb"))?2:
-                   (!strcmp(mon,"Mar"))?3:(!strcmp(mon,"Apr"))?4:
-                   (!strcmp(mon,"May"))?5:(!strcmp(mon,"Jun"))?6:
-                   (!strcmp(mon,"Jul"))?7:(!strcmp(mon,"Aug"))?8:
-                   (!strcmp(mon,"Sep"))?9:(!strcmp(mon,"Oct"))?10:
-                   (!strcmp(mon,"Nov"))?11:12,
-                   day, hour, min, sec);
+                   year, month, day, hour, min, sec);
+
+            /* ★ 写入 RTC ★ */
+            {
+                RTC_TimeTypeDef t;
+                /* 计算星期：蔡勒公式简化（0=Sunday ... 6=Saturday）
+                 * 这里不依赖精确的星期，估算即可 */
+                t.w_year  = (uint16_t)year;
+                t.w_month = (uint8_t)month;
+                t.w_date  = (uint8_t)day;
+                t.w_hour  = (uint8_t)hour;
+                t.w_min   = (uint8_t)min;
+                t.w_sec   = (uint8_t)sec;
+                MyRTC_SetTime(&t);
+                printf("  RTC updated!\r\n");
+            }
         }
         else
         {
@@ -113,43 +143,96 @@ static void Parse_Time_Response(void)
 
 
 /* ==================== 天气响应解析 ==================== */
-
+/*
+ * 紧凑格式 URL: ?format=%t|%h|%C
+ * wttr.in 返回纯文本（无 JSON），仅几十字节，如 "28|66|Smoky+haze"
+ * 没有 HTTP 头部（或极少），直接就是 body 内容
+ */
 static void Parse_Weather_Response(void)
 {
+    const char *body;
     const char *p;
     char temp_buf[16]    = "N/A";
-    char weather_buf[64] = "N/A";
     char humid_buf[16]   = "N/A";
-    char feels_buf[16]   = "N/A";
-    char wind_buf[32]    = "N/A";
+    char weather_buf[64] = "N/A";
+    uint8_t i;
+    int   wlen;
 
-    p = Json_FindValue(http_resp_buf, "\"temp_C\"");
-    if (p) Str_CopyDelim(p, temp_buf, 16);
-
-    p = Json_FindValue(http_resp_buf, "\"FeelsLikeC\"");
-    if (p) Str_CopyDelim(p, feels_buf, 16);
-
-    p = Json_FindValue(http_resp_buf, "\"humidity\"");
-    if (p) Str_CopyDelim(p, humid_buf, 16);
-
+    /*
+     * buffer 内容形如:
+     *   \r\nSEND OK\r\n\r\n+IPD,225:HTTP/1.1 200 OK\r\n...\r\n\r\n+26 C|74%|Smoky hazeCLOSED\r\n
+     * 有多个 \r\n\r\n, 最后一个才是 HTTP 头部/正文分隔符。
+     * 部分 ESP8266 固件可能只用 \n, 所以 \n\n 作为 fallback。
+     */
     {
-        const char *wd = strstr(http_resp_buf, "\"weatherDesc\"");
-        if (wd) {
-            p = Json_FindValue(wd, "\"value\"");
-            if (p) Str_CopyDelim(p, weather_buf, 64);
+        const char *scan = http_resp_buf;
+        const char *found;
+        body = http_resp_buf;
+
+        /* 优先匹配 \r\n\r\n */
+        while ((found = strstr(scan, "\r\n\r\n")) != NULL)
+        {
+            body = found + 4;
+            scan = found + 1;   /* 前进至少 1 字节, 避免死循环 */
+        }
+        /* 如果没找到 \r\n\r\n, 试试 \n\n */
+        if (body == http_resp_buf)
+        {
+            scan = http_resp_buf;
+            while ((found = strstr(scan, "\n\n")) != NULL)
+            {
+                body = found + 2;
+                scan = found + 1;
+            }
         }
     }
 
-    p = Json_FindValue(http_resp_buf, "\"windspeedKmph\"");
-    if (p) Str_CopyDelim(p, wind_buf, 32);
+    p = body;
+
+    /* 跳过行首可能的空白 */
+    while (*p == ' ' || *p == '\t') p++;
+
+    /* ---- 温度 ---- */
+    i = 0;
+    while (*p && *p != '|' && *p != '\r' && *p != '\n' && i < 15)
+        temp_buf[i++] = *p++;
+    temp_buf[i] = '\0';
+    if (*p == '|') p++;
+
+    /* ---- 湿度 ---- */
+    i = 0;
+    while (*p && *p != '|' && *p != '\r' && *p != '\n' && i < 15)
+        humid_buf[i++] = *p++;
+    humid_buf[i] = '\0';
+    if (*p == '|') p++;
+
+    /* ---- 天气描述 ---- */
+    i = 0;
+    while (*p && *p != '\r' && *p != '\n' && i < 63)
+    {
+        weather_buf[i++] = (*p == '+') ? ' ' : *p;
+        p++;
+    }
+    weather_buf[i] = '\0';
+
+    /* ★ 去掉尾部可能粘着的 "CLOSED" / "CLOSED" 等 ESP8266 状态字 */
+    wlen = (int)strlen(weather_buf);
+    if (wlen >= 6 && !strcmp(weather_buf + wlen - 6, "CLOSED"))
+        weather_buf[wlen - 6] = '\0';
 
     printf("\r\n=========== Weather Report ==========\r\n");
     printf("  City       : Xi'an\r\n");
-    printf("  Temperature: %s C (feels %s C)\r\n", temp_buf, feels_buf);
+    printf("  Temperature: %s C\r\n", temp_buf);
     printf("  Weather    : %s\r\n", weather_buf);
     printf("  Humidity   : %s%%\r\n", humid_buf);
-    printf("  Wind Speed : %s km/h\r\n", wind_buf);
     printf("====================================\r\n\r\n");
+
+    /* ★ 写入全局天气数据，供 UI 读取 ★ */
+    g_weather.temp_C   = (int8_t)atoi(temp_buf);
+    g_weather.humidity = (int8_t)atoi(humid_buf);
+    strncpy(g_weather.weather_desc, weather_buf, sizeof(g_weather.weather_desc) - 1);
+    g_weather.weather_desc[sizeof(g_weather.weather_desc) - 1] = '\0';
+    g_weather.valid = 1;
 }
 
 

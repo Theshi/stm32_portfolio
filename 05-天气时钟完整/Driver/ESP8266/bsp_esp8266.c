@@ -245,7 +245,7 @@ bool ESP8266_JoinAP(char *pSSID, char *pPassWord)
 
     sprintf(cCmd, "AT+CWJAP=\"%s\",\"%s\"", pSSID, pPassWord);
 
-    return ESP8266_Cmd(cCmd, "OK", NULL, 5000);
+    return ESP8266_Cmd(cCmd, "OK", NULL, 20000);
 }
 
 
